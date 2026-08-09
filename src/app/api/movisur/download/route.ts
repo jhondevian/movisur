@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { getPublicUrl, isAllowedSiteReferrer } from "@/lib/request-url";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -12,9 +11,23 @@ const downloadRateLimit = {
   blockMs: 15 * 60_000,
 };
 
+function isAllowedReferrer(request: NextRequest) {
+  const referer = request.headers.get("referer");
+  if (!referer) return true;
+
+  try {
+    const refererUrl = new URL(referer);
+    const normalizeHost = (host: string) => host.replace(/^www\./, "");
+
+    return normalizeHost(refererUrl.hostname) === normalizeHost(request.nextUrl.hostname);
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(request: NextRequest) {
-  if (!isAllowedSiteReferrer(request)) {
-    return NextResponse.redirect(getPublicUrl(request, "/?download=forbidden"));
+  if (!isAllowedReferrer(request)) {
+    return NextResponse.redirect(new URL("/?download=forbidden", request.url));
   }
 
   const rateLimit = checkRateLimit(
@@ -23,7 +36,7 @@ export async function GET(request: NextRequest) {
   );
 
   if (!rateLimit.allowed) {
-    const blockedUrl = getPublicUrl(request, "/");
+    const blockedUrl = new URL("/", request.url);
     blockedUrl.searchParams.set("download", "blocked");
     blockedUrl.searchParams.set("retry", String(rateLimit.retryAfter));
     const response = NextResponse.redirect(blockedUrl);
@@ -54,7 +67,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!version) {
-    return NextResponse.redirect(getPublicUrl(request, "/?download=empty"));
+    return NextResponse.redirect(new URL("/?download=empty", request.url));
   }
 
   await prisma.movisurVersion.update({
@@ -62,7 +75,7 @@ export async function GET(request: NextRequest) {
     data: { downloads: { increment: 1 } },
   });
 
-  const response = NextResponse.redirect(getPublicUrl(request, version.downloadUrl));
+  const response = NextResponse.redirect(new URL(version.downloadUrl, request.url));
   response.headers.set("X-RateLimit-Limit", String(downloadRateLimit.limit));
   response.headers.set("X-RateLimit-Remaining", String(rateLimit.remaining));
 

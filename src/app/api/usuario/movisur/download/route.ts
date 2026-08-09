@@ -1,7 +1,6 @@
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { getPublicUrl } from "@/lib/request-url";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -19,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   if (!token) {
     return NextResponse.redirect(
-      getPublicUrl(request, "/signin?next=/usuario/descargas")
+      new URL("/signin?next=/usuario/descargas", request.url)
     );
   }
 
@@ -29,7 +28,7 @@ export async function GET(request: NextRequest) {
     user = await verifyAuthToken(token);
   } catch {
     return NextResponse.redirect(
-      getPublicUrl(request, "/signin?next=/usuario/descargas")
+      new URL("/signin?next=/usuario/descargas", request.url)
     );
   }
 
@@ -99,12 +98,12 @@ export async function GET(request: NextRequest) {
 
   if (!version) {
     return NextResponse.redirect(
-      getPublicUrl(request, "/usuario/descargas?download=empty")
+      new URL("/usuario/descargas?download=empty", request.url)
     );
   }
 
   if (version.isSaleVersion && !confirmedPurchase) {
-    return NextResponse.redirect(getPublicUrl(request, "/usuario/compras"));
+    return NextResponse.redirect(new URL("/usuario/compras", request.url));
   }
 
   await prisma.movisurVersion.update({
@@ -112,5 +111,5 @@ export async function GET(request: NextRequest) {
     data: { downloads: { increment: 1 } },
   });
 
-  return NextResponse.redirect(getPublicUrl(request, version.downloadUrl));
+  return NextResponse.redirect(new URL(version.downloadUrl, request.url));
 }
