@@ -88,6 +88,13 @@ export default function NewMovisurVersionForm({
             return null;
           }
         })();
+        if (request.status === 413) {
+          setError(
+            "El archivo ZIP es demasiado grande para el limite actual del servidor. Sube el limite de carga del VPS/proxy a 512 MB o usa una URL de descarga externa."
+          );
+          return;
+        }
+
         setError(
           payload?.message ??
             (isEditing
@@ -105,7 +112,7 @@ export default function NewMovisurVersionForm({
     request.onerror = () => {
       setIsSubmitting(false);
       setError(
-        "La subida se interrumpio. Espera a que termine el intento actual antes de volver a crearla."
+        "La subida se interrumpio. Revisa la conexion o el limite de carga del servidor antes de volver a intentarlo."
       );
     };
 

@@ -43,7 +43,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
   }
 
-  const formData = await request.formData();
+  const formData = await request.formData().catch(() => null);
+
+  if (!formData) {
+    return NextResponse.json(
+      {
+        message:
+          "El archivo es demasiado grande para el limite actual del servidor. Aumenta el limite de carga o usa URL de descarga.",
+      },
+      { status: 413 }
+    );
+  }
   const version = getString(formData, "version");
   const platform = "android";
   const releaseType = getString(formData, "releaseType") || "stable";

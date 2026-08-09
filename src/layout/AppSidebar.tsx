@@ -26,7 +26,7 @@ const adminNavItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Movisur", path: "/admin", pro: false }],
+    path: "/admin",
   },
   {
     icon: <BoxCubeIcon />,

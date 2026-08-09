@@ -15,7 +15,7 @@ export async function GET() {
   const token = cookieStore.get(authCookieName)?.value;
 
   if (!token) {
-    return NextResponse.json({ user: null }, { status: 401 });
+    return NextResponse.json({ user: null });
   }
 
   try {
@@ -33,7 +33,7 @@ export async function GET() {
     });
 
     if (!user) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json({ user: null });
     }
 
     const response = NextResponse.json({ user });
@@ -49,6 +49,6 @@ export async function GET() {
 
     return response;
   } catch {
-    return NextResponse.json({ user: null }, { status: 401 });
+    return NextResponse.json({ user: null });
   }
 }

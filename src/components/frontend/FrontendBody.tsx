@@ -4,8 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-const deviceBrands = ["Samsung", "LG", "Xiaomi", "Honor"];
-
 type FrontendCategory = {
   id: string;
   name: string;
@@ -94,18 +92,12 @@ export default function FrontendBody({
         .includes(normalizedSearch)
     );
   }, [frontendProducts, searchTerm, selectedCategoryId]);
-  const availableCategories =
-    categories.length > 0
-      ? categories.map((category) => ({
-          id: category.id,
-          name: category.name,
-          imageUrl: category.imageUrl,
-        }))
-      : deviceBrands.map((brand) => ({
-          id: brand,
-          name: brand,
-          imageUrl: null,
-        }));
+  const availableCategories = categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    imageUrl: category.imageUrl,
+  }));
+  const heroCategories = availableCategories.slice(0, 6);
   const downloadMessage =
     downloadStatus === "empty"
       ? "Aún no hay una versión pública de Movisur Tool disponible. El admin debe subir y activar el archivo."
@@ -135,8 +127,9 @@ export default function FrontendBody({
             experiencia clara y ordenada.
           </p>
 
-          <div className="mt-9 flex flex-wrap items-end justify-center gap-x-8 gap-y-6 sm:gap-x-10">
-            {availableCategories.map((category) => (
+          {heroCategories.length > 0 ? (
+          <div className="mt-7 grid w-full max-w-[340px] grid-cols-6 items-end justify-center gap-2 sm:mt-9 sm:max-w-3xl sm:flex sm:flex-wrap sm:gap-x-10 sm:gap-y-6">
+            {heroCategories.map((category) => (
               <button
                 key={category.id}
                 type="button"
@@ -147,29 +140,30 @@ export default function FrontendBody({
                     .getElementById("operaciones")
                     ?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
-                className="flex w-20 flex-col items-center gap-3 text-center transition hover:-translate-y-0.5 sm:w-24"
+                className="flex min-w-0 flex-col items-center gap-1.5 text-center transition hover:-translate-y-0.5 sm:w-24 sm:gap-3"
               >
-                <div className="relative flex h-14 w-16 items-center justify-center sm:h-16 sm:w-20">
+                <div className="relative flex h-8 w-8 items-center justify-center sm:h-16 sm:w-20">
                   {category.imageUrl ? (
                     <Image
                       src={category.imageUrl}
                       alt={category.name}
                       fill
-                      sizes="80px"
+                      sizes="(max-width: 640px) 32px, 80px"
                       className="object-contain"
                     />
                   ) : (
-                    <span className="text-xl font-extrabold text-gray-950 dark:text-white">
+                    <span className="text-xs font-extrabold text-gray-950 dark:text-white sm:text-xl">
                       {category.name.slice(0, 2).toUpperCase()}
                     </span>
                   )}
                 </div>
-                <span className="line-clamp-1 text-sm font-bold text-gray-950 dark:text-white">
+                <span className="line-clamp-1 max-w-full text-[10px] font-bold leading-tight text-gray-950 dark:text-white sm:text-sm">
                   {category.name}
                 </span>
               </button>
             ))}
           </div>
+          ) : null}
 
           <div className="mt-9 flex flex-wrap justify-center gap-4">
             <Link
