@@ -12,6 +12,15 @@ const productDownloadRateLimit = {
   blockMs: 15 * 60_000,
 };
 
+function redirectTo(location: string) {
+  return new NextResponse(null, {
+    status: 302,
+    headers: {
+      Location: location,
+    },
+  });
+}
+
 async function hasConfirmedPurchase(userId: string) {
   const purchase = await prisma.adminNotification.findFirst({
     where: {
@@ -55,7 +64,7 @@ export async function GET(
   });
 
   if (!file) {
-    return NextResponse.redirect(new URL("/?archivo=no-disponible", request.url));
+    return redirectTo("/?archivo=no-disponible");
   }
 
   const rateLimit = checkRateLimit(
@@ -84,9 +93,7 @@ export async function GET(
       ? "/informacion?comprar=1"
       : `/productos/${file.slug}`;
 
-    return NextResponse.redirect(
-      new URL(`/signin?next=${encodeURIComponent(nextPath)}`, request.url)
-    );
+    return redirectTo(`/signin?next=${encodeURIComponent(nextPath)}`);
   }
 
   try {
@@ -97,16 +104,14 @@ export async function GET(
       ? "/informacion?comprar=1"
       : `/productos/${file.slug}`;
 
-    return NextResponse.redirect(
-      new URL(`/signin?next=${encodeURIComponent(nextPath)}`, request.url)
-    );
+    return redirectTo(`/signin?next=${encodeURIComponent(nextPath)}`);
   }
 
   if (file.isForSale) {
     const canDownload = await hasConfirmedPurchase(userId);
 
     if (!canDownload) {
-      return NextResponse.redirect(new URL("/informacion?comprar=1", request.url));
+      return redirectTo("/informacion?comprar=1");
     }
   }
 
@@ -136,5 +141,5 @@ export async function GET(
     }
   });
 
-  return NextResponse.redirect(new URL(file.downloadUrl, request.url));
+  return redirectTo(file.downloadUrl);
 }

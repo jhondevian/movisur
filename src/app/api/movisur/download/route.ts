@@ -11,35 +11,26 @@ const downloadRateLimit = {
   blockMs: 15 * 60_000,
 };
 
-function isAllowedReferrer(request: NextRequest) {
-  const referer = request.headers.get("referer");
-  if (!referer) return true;
-
-  try {
-    const refererUrl = new URL(referer);
-    const normalizeHost = (host: string) => host.replace(/^www\./, "");
-
-    return normalizeHost(refererUrl.hostname) === normalizeHost(request.nextUrl.hostname);
-  } catch {
-    return false;
-  }
+function redirectTo(location: string) {
+  return new NextResponse(null, {
+    status: 302,
+    headers: {
+      Location: location,
+    },
+  });
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAllowedReferrer(request)) {
-    return NextResponse.redirect(new URL("/?download=forbidden", request.url));
-  }
-
   const rateLimit = checkRateLimit(
     getRateLimitKey(request, "movisur-download"),
     downloadRateLimit
   );
 
   if (!rateLimit.allowed) {
-    const blockedUrl = new URL("/", request.url);
-    blockedUrl.searchParams.set("download", "blocked");
-    blockedUrl.searchParams.set("retry", String(rateLimit.retryAfter));
-    const response = NextResponse.redirect(blockedUrl);
+    const blockedUrl = new URLSearchParams();
+    blockedUrl.set("download", "blocked");
+    blockedUrl.set("retry", String(rateLimit.retryAfter));
+    const response = redirectTo(`/?${blockedUrl.toString()}`);
     response.headers.set("Retry-After", String(rateLimit.retryAfter));
     response.headers.set("X-RateLimit-Limit", String(downloadRateLimit.limit));
     response.headers.set("X-RateLimit-Remaining", "0");
@@ -67,7 +58,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!version) {
-    return NextResponse.redirect(new URL("/?download=empty", request.url));
+    return redirectTo("/?download=empty");
   }
 
   await prisma.movisurVersion.update({
@@ -75,7 +66,7 @@ export async function GET(request: NextRequest) {
     data: { downloads: { increment: 1 } },
   });
 
-  const response = NextResponse.redirect(new URL(version.downloadUrl, request.url));
+  const response = redirectTo(version.downloadUrl);
   response.headers.set("X-RateLimit-Limit", String(downloadRateLimit.limit));
   response.headers.set("X-RateLimit-Remaining", String(rateLimit.remaining));
 

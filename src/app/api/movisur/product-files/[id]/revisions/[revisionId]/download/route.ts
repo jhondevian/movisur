@@ -12,6 +12,15 @@ const revisionDownloadRateLimit = {
   blockMs: 15 * 60_000,
 };
 
+function redirectTo(location: string) {
+  return new NextResponse(null, {
+    status: 302,
+    headers: {
+      Location: location,
+    },
+  });
+}
+
 async function getAuthUserId() {
   const cookieStore = await cookies();
   const token = cookieStore.get(authCookieName)?.value;
@@ -75,7 +84,7 @@ export async function GET(
   });
 
   if (!revision) {
-    return NextResponse.redirect(new URL("/?archivo=no-disponible", request.url));
+    return redirectTo("/?archivo=no-disponible");
   }
 
   const rateLimit = checkRateLimit(
@@ -108,16 +117,14 @@ export async function GET(
       ? "/informacion?comprar=1"
       : `/productos/${revision.productFile.slug}`;
 
-    return NextResponse.redirect(
-      new URL(`/signin?next=${encodeURIComponent(nextPath)}`, request.url)
-    );
+    return redirectTo(`/signin?next=${encodeURIComponent(nextPath)}`);
   }
 
   if (requiresPlan) {
     const canDownload = await hasConfirmedPurchase(userId);
 
     if (!canDownload) {
-      return NextResponse.redirect(new URL("/informacion?comprar=1", request.url));
+      return redirectTo("/informacion?comprar=1");
     }
   }
 
@@ -147,5 +154,5 @@ export async function GET(
     }
   });
 
-  return NextResponse.redirect(new URL(revision.downloadUrl, request.url));
+  return redirectTo(revision.downloadUrl);
 }
