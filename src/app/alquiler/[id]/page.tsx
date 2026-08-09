@@ -254,7 +254,7 @@ export default async function RentalPage({ params }: RentalPageProps) {
             commerceType: "rental",
             sellerName: `${offer.creator.firstName} ${offer.creator.lastName}`.trim(),
             sellerAvatarUrl: offer.creator.avatarUrl,
-            planName: offer.plan.name,
+            planName: "",
             durationLabel: `${offer.plan.durationMonths} hora${
               offer.plan.durationMonths === 1 ? "" : "s"
             }`,

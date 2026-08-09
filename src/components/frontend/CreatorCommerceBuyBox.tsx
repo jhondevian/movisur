@@ -215,7 +215,9 @@ export default function CreatorCommerceBuyBox({
               <div className="grid gap-3 sm:grid-cols-[auto_auto] sm:items-center md:justify-end">
                 <div className="text-left sm:text-right">
                   <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                    {offer.planName} · {offer.durationLabel}
+                    {[offer.planName, offer.durationLabel]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                   <p className="mt-1 text-3xl font-extrabold text-gray-950 dark:text-white">
                     {offer.currency} {offer.price}
