@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 
@@ -37,6 +37,14 @@ function getNotificationMeta(notification: AdminNotification) {
     };
   }
 
+  if (notification.type === "payment_confirmed") {
+    return {
+      href: "/usuario/compras",
+      icon: "✓",
+      label: "Confirmado",
+    };
+  }
+
   return {
     href: notification.recipientUserId ? "/creador/compras" : "/admin/compras",
     icon: "$",
@@ -49,8 +57,31 @@ export default function NotificationDropdown() {
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [targetHref, setTargetHref] = useState("/admin/compras");
+  const knownNotificationIds = useRef<Set<string> | null>(null);
 
-  async function loadNotifications() {
+  const notifyBrowser = useCallback((notification: AdminNotification) => {
+    if (
+      typeof window === "undefined" ||
+      !("Notification" in window) ||
+      window.Notification.permission !== "granted"
+    ) {
+      return;
+    }
+
+    const meta = getNotificationMeta(notification);
+    const desktopNotification = new window.Notification(notification.title, {
+      body: notification.message,
+      icon: "/images/movisur-logo.png",
+      tag: notification.id,
+    });
+
+    desktopNotification.onclick = () => {
+      window.focus();
+      window.location.href = meta.href;
+    };
+  }, []);
+
+  const loadNotifications = useCallback(async () => {
     const response = await fetch("/api/admin/notifications", {
       cache: "no-store",
     });
@@ -63,12 +94,39 @@ export default function NotificationDropdown() {
       targetHref?: string;
     };
 
+    const currentIds = new Set(
+      payload.notifications.map((notification) => notification.id)
+    );
+
+    if (knownNotificationIds.current) {
+      payload.notifications
+        .filter(
+          (notification) =>
+            !notification.isRead &&
+            !knownNotificationIds.current?.has(notification.id)
+        )
+        .forEach(notifyBrowser);
+    }
+
+    knownNotificationIds.current = currentIds;
     setNotifications(payload.notifications);
     setUnreadCount(payload.unreadCount);
     setTargetHref(payload.targetHref ?? "/admin/compras");
-  }
+  }, [notifyBrowser]);
 
   useEffect(() => {
+    if (
+      "Notification" in window &&
+      window.Notification.permission === "default" &&
+      window.localStorage.getItem("movisur-notification-permission-asked") !==
+        "1"
+    ) {
+      window.localStorage.setItem("movisur-notification-permission-asked", "1");
+      window.setTimeout(() => {
+        window.Notification.requestPermission().catch(() => undefined);
+      }, 1200);
+    }
+
     const timeout = window.setTimeout(loadNotifications, 0);
     const interval = window.setInterval(loadNotifications, 30_000);
 
@@ -76,7 +134,7 @@ export default function NotificationDropdown() {
       window.clearTimeout(timeout);
       window.clearInterval(interval);
     };
-  }, []);
+  }, [loadNotifications]);
 
   async function handleClick() {
     const nextOpen = !isOpen;

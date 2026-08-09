@@ -166,12 +166,12 @@ export default function FrontendBody({
           ) : null}
 
           <div className="mt-9 flex flex-wrap justify-center gap-4">
-            <Link
+            <a
               href="/api/movisur/download"
               className="rounded-lg bg-brand-500 px-8 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
             >
               Descargar
-            </Link>
+            </a>
             <Link
               href="/informacion"
               className="rounded-lg border border-gray-300 bg-white px-8 py-4 text-base font-semibold text-gray-900 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
@@ -367,7 +367,7 @@ export default function FrontendBody({
                 <div className="min-h-[76px]" />
               )}
 
-              <Link
+              <a
                 href={
                   product.isForSale && !hasConfirmedPurchase
                     ? "/informacion?comprar=1"
@@ -392,7 +392,7 @@ export default function FrontendBody({
                   : product.fileType === "video"
                   ? "Ver video"
                   : "Descargar"}
-              </Link>
+              </a>
             </article>
           ))}
         </div>

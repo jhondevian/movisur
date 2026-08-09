@@ -1,7 +1,6 @@
 "use client";
 
 import { DownloadIcon, InfoIcon, TimeIcon } from "@/icons";
-import Link from "next/link";
 import { useState } from "react";
 
 type ProductRevision = {
@@ -108,22 +107,22 @@ export default function ProductContentTabs({
                     : "Inicia sesion para descargar este producto libre y guardar tu historial de descargas."}
                 </p>
                 {canAccess ? (
-                  <Link
+                  <a
                     href={actionHref}
                     target={actionOpensNewTab ? "_blank" : undefined}
                     rel={actionOpensNewTab ? "noopener noreferrer" : undefined}
                     className="mt-7 inline-flex w-full items-center justify-center rounded-lg bg-brand-500 px-6 py-4 text-base font-semibold text-white transition hover:bg-brand-600"
                   >
                     {actionLabel}
-                  </Link>
+                  </a>
                 ) : null}
                 {!canAccess ? (
-                  <Link
+                  <a
                     href={actionHref}
                     className="mt-5 block text-center text-sm font-semibold text-brand-500 transition hover:text-brand-600"
                   >
                     {requiresPurchase ? "Ver planes disponibles" : actionLabel}
-                  </Link>
+                  </a>
                 ) : null}
               </div>
             </div>
@@ -154,7 +153,7 @@ export default function ProductContentTabs({
                       <span className="text-sm font-semibold text-gray-400">
                         {formatUploadedAt(revision.uploadedAt)}
                       </span>
-                      <Link
+                      <a
                         href={revision.downloadHref}
                         target={
                           revision.canDownload && revision.opensNewTab
@@ -173,7 +172,7 @@ export default function ProductContentTabs({
                         }`}
                       >
                         {revision.canDownload ? "Descargar" : "Requiere plan"}
-                      </Link>
+                      </a>
                     </div>
                   </div>
                 ))

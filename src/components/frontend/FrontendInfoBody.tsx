@@ -3,7 +3,6 @@
 import { addCartItem } from "@/lib/frontend-cart";
 import type { AuthUser } from "@/lib/auth";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
 
@@ -211,12 +210,12 @@ export default function FrontendInfoBody() {
             </p>
 
             <div className="mt-9 flex flex-wrap justify-center gap-4">
-              <Link
+              <a
                 href="/api/movisur/download"
                 className="rounded-lg bg-brand-500 px-8 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
               >
                 Descargar
-              </Link>
+              </a>
               <button
                 type="button"
                 onClick={() => {

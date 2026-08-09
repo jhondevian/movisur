@@ -7,6 +7,11 @@ export const runtime = "nodejs";
 
 type PaymentMetadata = {
   purchaseStatus?: string;
+  currency?: string;
+  itemName?: string;
+  planName?: string;
+  price?: string;
+  userId?: string;
   [key: string]: unknown;
 };
 
@@ -18,6 +23,48 @@ function parseMetadata(metadata: string | null): PaymentMetadata {
   } catch {
     return {};
   }
+}
+
+async function notifyBuyerPaymentConfirmed(
+  purchaseId: string,
+  metadata: PaymentMetadata
+) {
+  if (!metadata.userId) return;
+
+  const existingNotification = await prisma.adminNotification.findFirst({
+    where: {
+      type: "payment_confirmed",
+      recipientUserId: metadata.userId,
+      metadata: {
+        contains: `"purchaseNotificationId":"${purchaseId}"`,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (existingNotification) return;
+
+  const itemName = metadata.itemName || metadata.planName || "Movisur";
+  const priceText =
+    metadata.price && metadata.currency
+      ? ` (${metadata.currency} ${metadata.price})`
+      : "";
+
+  await prisma.adminNotification.create({
+    data: {
+      type: "payment_confirmed",
+      recipientUserId: metadata.userId,
+      title: "Pago confirmado",
+      message: `${itemName}${priceText} ya fue aprobado.`,
+      metadata: JSON.stringify({
+        purchaseNotificationId: purchaseId,
+        itemName,
+        planName: metadata.planName,
+        price: metadata.price,
+        currency: metadata.currency,
+      }),
+    },
+  });
 }
 
 export async function POST(
@@ -69,6 +116,8 @@ export async function POST(
       metadata: JSON.stringify(updatedMetadata),
     },
   });
+
+  await notifyBuyerPaymentConfirmed(purchase.id, updatedMetadata);
 
   return NextResponse.json({ ok: true });
 }

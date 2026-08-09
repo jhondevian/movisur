@@ -297,14 +297,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             <div className="mt-9 flex flex-wrap justify-center gap-4">
-              <Link
+              <a
                 href={actionHref}
                 target={actionOpensNewTab ? "_blank" : undefined}
                 rel={actionOpensNewTab ? "noopener noreferrer" : undefined}
                 className="rounded-lg bg-brand-500 px-8 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
               >
                 {actionLabel}
-              </Link>
+              </a>
             </div>
 
             <div className="mt-10 flex flex-wrap justify-center gap-5 sm:gap-7">
