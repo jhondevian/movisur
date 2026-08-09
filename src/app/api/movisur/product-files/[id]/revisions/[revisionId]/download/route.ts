@@ -1,6 +1,7 @@
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { getPublicUrl } from "@/lib/request-url";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -75,7 +76,7 @@ export async function GET(
   });
 
   if (!revision) {
-    return NextResponse.redirect(new URL("/?archivo=no-disponible", request.url));
+    return NextResponse.redirect(getPublicUrl(request, "/?archivo=no-disponible"));
   }
 
   const rateLimit = checkRateLimit(
@@ -109,7 +110,7 @@ export async function GET(
       : `/productos/${revision.productFile.slug}`;
 
     return NextResponse.redirect(
-      new URL(`/signin?next=${encodeURIComponent(nextPath)}`, request.url)
+      getPublicUrl(request, `/signin?next=${encodeURIComponent(nextPath)}`)
     );
   }
 
@@ -117,7 +118,7 @@ export async function GET(
     const canDownload = await hasConfirmedPurchase(userId);
 
     if (!canDownload) {
-      return NextResponse.redirect(new URL("/informacion?comprar=1", request.url));
+      return NextResponse.redirect(getPublicUrl(request, "/informacion?comprar=1"));
     }
   }
 
@@ -147,5 +148,5 @@ export async function GET(
     }
   });
 
-  return NextResponse.redirect(new URL(revision.downloadUrl, request.url));
+  return NextResponse.redirect(getPublicUrl(request, revision.downloadUrl));
 }
