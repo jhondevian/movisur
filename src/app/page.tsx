@@ -7,7 +7,15 @@ import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+type HomeProps = {
+  searchParams?: Promise<{
+    download?: string;
+    retry?: string;
+  }>;
+};
+
+export default async function Home({ searchParams }: HomeProps) {
+  const params = await searchParams;
   const cookieStore = await cookies();
   const token = cookieStore.get(authCookieName)?.value;
   let userId = "";
@@ -171,6 +179,8 @@ export default async function Home() {
         ]}
         hasConfirmedPurchase={Boolean(confirmedPurchase)}
         productFiles={productFiles}
+        downloadStatus={params?.download}
+        downloadRetryAfter={params?.retry}
       />
       <FrontendFooter />
     </>

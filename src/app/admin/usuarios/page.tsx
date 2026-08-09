@@ -58,13 +58,21 @@ export default async function AdminUsuariosPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Usuarios
-        </h1>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Vista general de cuentas registradas y actividad de acceso.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Usuarios
+          </h1>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Vista general de cuentas registradas y actividad de acceso.
+          </p>
+        </div>
+        <Link
+          href="/admin/usuarios/new"
+          className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
+        >
+          Nuevo usuario
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-4">

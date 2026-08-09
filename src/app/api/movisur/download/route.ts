@@ -16,7 +16,10 @@ function isAllowedReferrer(request: NextRequest) {
   if (!referer) return true;
 
   try {
-    return new URL(referer).origin === request.nextUrl.origin;
+    const refererUrl = new URL(referer);
+    const normalizeHost = (host: string) => host.replace(/^www\./, "");
+
+    return normalizeHost(refererUrl.hostname) === normalizeHost(request.nextUrl.hostname);
   } catch {
     return false;
   }
@@ -24,7 +27,7 @@ function isAllowedReferrer(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   if (!isAllowedReferrer(request)) {
-    return NextResponse.json({ message: "Origen no permitido." }, { status: 403 });
+    return NextResponse.redirect(new URL("/?download=forbidden", request.url));
   }
 
   const rateLimit = checkRateLimit(
@@ -33,17 +36,15 @@ export async function GET(request: NextRequest) {
   );
 
   if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { message: "Demasiadas descargas. Intenta nuevamente mas tarde." },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(rateLimit.retryAfter),
-          "X-RateLimit-Limit": String(downloadRateLimit.limit),
-          "X-RateLimit-Remaining": "0",
-        },
-      }
-    );
+    const blockedUrl = new URL("/", request.url);
+    blockedUrl.searchParams.set("download", "blocked");
+    blockedUrl.searchParams.set("retry", String(rateLimit.retryAfter));
+    const response = NextResponse.redirect(blockedUrl);
+    response.headers.set("Retry-After", String(rateLimit.retryAfter));
+    response.headers.set("X-RateLimit-Limit", String(downloadRateLimit.limit));
+    response.headers.set("X-RateLimit-Remaining", "0");
+
+    return response;
   }
 
   const platformParam =

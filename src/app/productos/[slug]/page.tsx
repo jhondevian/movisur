@@ -4,7 +4,7 @@ import ProductContentTabs from "@/components/frontend/ProductContentTabs";
 import ProductRating from "@/components/frontend/ProductRating";
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getShareImage } from "@/lib/site-metadata";
+import { absoluteUrl, cleanSeoText, getShareImage, siteUrl } from "@/lib/site-metadata";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Image from "next/image";
@@ -146,13 +146,20 @@ export async function generateMetadata({
 
   return {
     title: `${product.name} | Movisur`,
-    description,
+    description: cleanSeoText(
+      description,
+      `${product.name} disponible en Movisur Tool para descarga, soporte y recursos técnicos.`
+    ),
+    alternates: {
+      canonical: `${siteUrl}/productos/${slug}`,
+    },
     openGraph: {
       title: product.name,
-      description,
+      description: cleanSeoText(description, "Producto descargable de Movisur"),
+      url: `${siteUrl}/productos/${slug}`,
       images: [
         {
-          url: image,
+          url: absoluteUrl(image),
           alt: product.name,
         },
       ],
@@ -161,8 +168,8 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: product.name,
-      description,
-      images: [image],
+      description: cleanSeoText(description, "Producto descargable de Movisur"),
+      images: [absoluteUrl(image)],
     },
   };
 }
@@ -214,10 +221,45 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const freePreviousRevisionId = product.revisions.find(
     (revision) => !revision.isCurrent
   )?.id;
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: product.name,
+    description: cleanSeoText(
+      product.description,
+      `${product.name} disponible en Movisur Tool.`
+    ),
+    image: imageUrl ? absoluteUrl(imageUrl) : undefined,
+    url: `${siteUrl}/productos/${product.slug}`,
+    applicationCategory: "UtilitiesApplication",
+    operatingSystem: "Android",
+    aggregateRating:
+      ratingSummary.count > 0
+        ? {
+            "@type": "AggregateRating",
+            ratingValue: ratingSummary.average.toFixed(1),
+            ratingCount: ratingSummary.count,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        : undefined,
+    offers: {
+      "@type": "Offer",
+      availability: "https://schema.org/InStock",
+      price: product.isForSale ? "0" : "0",
+      priceCurrency: "USD",
+      url: `${siteUrl}/productos/${product.slug}`,
+    },
+  };
 
   return (
     <>
       <FrontendHeader />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <main className="bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
         <section className="border-b border-gray-100 bg-[linear-gradient(180deg,#f8fbff_0%,#f7f6ff_58%,#eef3ff_100%)] dark:border-gray-900 dark:bg-none dark:bg-gray-950">
           <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-14 pt-10 text-center sm:px-6 sm:pb-16 sm:pt-14 lg:px-8">

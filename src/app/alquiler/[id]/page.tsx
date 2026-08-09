@@ -3,7 +3,7 @@ import FrontendFooter from "@/components/frontend/FrontendFooter";
 import FrontendHeader from "@/components/frontend/FrontendHeader";
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getShareImage } from "@/lib/site-metadata";
+import { absoluteUrl, cleanSeoText, getShareImage, siteUrl } from "@/lib/site-metadata";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Image from "next/image";
@@ -55,13 +55,17 @@ export async function generateMetadata({
 
   return {
     title,
-    description,
+    description: cleanSeoText(description, "Alquiler disponible en Movisur"),
+    alternates: {
+      canonical: `${siteUrl}/alquiler/${id}`,
+    },
     openGraph: {
       title: tool?.name || "Alquiler Movisur",
-      description,
+      description: cleanSeoText(description, "Alquiler disponible en Movisur"),
+      url: `${siteUrl}/alquiler/${id}`,
       images: [
         {
-          url: image,
+          url: absoluteUrl(image),
           alt: tool?.name || "Alquiler Movisur",
         },
       ],
@@ -70,8 +74,8 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: tool?.name || "Alquiler Movisur",
-      description,
-      images: [image],
+      description: cleanSeoText(description, "Alquiler disponible en Movisur"),
+      images: [absoluteUrl(image)],
     },
   };
 }
@@ -115,6 +119,28 @@ export default async function RentalPage({ params }: RentalPageProps) {
   });
 
   if (!tool || tool.offers.length === 0) notFound();
+  const lowestOffer = tool.offers[0];
+  const toolJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: tool.name,
+    description: cleanSeoText(tool.description, "Alquiler disponible en Movisur"),
+    image: tool.imageUrl ? absoluteUrl(tool.imageUrl) : undefined,
+    url: `${siteUrl}/alquiler/${tool.id}`,
+    brand: {
+      "@type": "Brand",
+      name: "Movisur",
+    },
+    offers: lowestOffer
+      ? {
+          "@type": "Offer",
+          price: lowestOffer.price.toString(),
+          priceCurrency: lowestOffer.currency,
+          availability: "https://schema.org/InStock",
+          url: `${siteUrl}/alquiler/${tool.id}`,
+        }
+      : undefined,
+  };
 
   const creatorIds = Array.from(
     new Set(tool.offers.map((offer) => offer.creatorId))
@@ -179,6 +205,11 @@ export default async function RentalPage({ params }: RentalPageProps) {
   return (
     <>
       <FrontendHeader />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(toolJsonLd) }}
+      />
       <main className="bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
         <section className="border-b border-gray-100 bg-[linear-gradient(180deg,#f8fbff_0%,#f7f6ff_58%,#eef3ff_100%)] dark:border-gray-900 dark:bg-none dark:bg-gray-950">
           <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-14 pt-10 text-center sm:px-6 sm:pb-16 sm:pt-14 lg:px-8">

@@ -4,6 +4,29 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+const roleOptions = [
+  {
+    value: "usuario",
+    label: "Usuario",
+    description: "Acceso normal a compras, descargas y productos.",
+  },
+  {
+    value: "creador",
+    label: "Creador",
+    description: "Puede subir archivos, vender licencias y alquilar tools.",
+  },
+  {
+    value: "moderador",
+    label: "Moderador",
+    description: "Acceso de revision y soporte operativo.",
+  },
+  {
+    value: "admin",
+    label: "Admin",
+    description: "Control completo del panel Movisur.",
+  },
+];
+
 type AdminUserDetailFormProps = {
   backHref: string;
   user: {
@@ -69,6 +92,9 @@ export default function AdminUserDetailForm({
     }
   }
 
+  const currentRoleLabel =
+    roleOptions.find((option) => option.value === role)?.label || role;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -111,7 +137,7 @@ export default function AdminUserDetailForm({
               {user.email}
             </p>
             <span className="mt-4 inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-500 dark:bg-brand-500/10">
-              {user.role}
+              {currentRoleLabel}
             </span>
           </div>
 
@@ -175,19 +201,44 @@ export default function AdminUserDetailForm({
                 className="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
               />
             </label>
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Rol
-              <select
-                value={role}
-                onChange={(event) => setRole(event.target.value)}
-                className="mt-2 h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
-              >
-                <option value="usuario">Usuario</option>
-                <option value="creador">Creador</option>
-                <option value="moderador">Moderador</option>
-                <option value="admin">Admin</option>
-              </select>
-            </label>
+          </div>
+
+          <div className="mt-8 border-t border-gray-100 pt-6 dark:border-gray-800">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">
+                  Cambiar rol
+                </h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Selecciona el acceso que tendra este usuario.
+                </p>
+              </div>
+              <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-500 dark:bg-brand-500/10">
+                Rol actual: {currentRoleLabel}
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {roleOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setRole(option.value)}
+                  className={`rounded-xl border p-4 text-left transition ${
+                    role === option.value
+                      ? "border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-brand-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/5"
+                  }`}
+                >
+                  <span className="block text-sm font-bold">
+                    {option.label}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 opacity-80">
+                    {option.description}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="mt-8 border-t border-gray-100 pt-6 dark:border-gray-800">

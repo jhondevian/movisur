@@ -4,81 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-const products = [
-  {
-    title: "Movisur Samsung",
-    device: "SA",
-    platform: "M",
-    text: "Version preparada para equipos Samsung con acceso rapido a la herramienta Movisur.",
-  },
-  {
-    title: "Movisur LG",
-    device: "LG",
-    platform: "M",
-    text: "Instalador para dispositivos LG, listo para descargar y mantener tus recursos conectados.",
-  },
-  {
-    title: "Movisur Xiaomi",
-    device: "MI",
-    platform: "M",
-    text: "Paquete compatible con Xiaomi para gestionar archivos, versiones y soporte interno.",
-  },
-  {
-    title: "Movisur Honor",
-    device: "HO",
-    platform: "M",
-    text: "Version para equipos Honor con descarga directa y soporte para recursos compartidos.",
-  },
-  {
-    title: "Movisur Motorola",
-    device: "MO",
-    platform: "M",
-    text: "Instalador estable para Motorola, preparado para trabajar con tus archivos Movisur.",
-  },
-  {
-    title: "Movisur Huawei",
-    device: "HU",
-    platform: "M",
-    text: "Paquete Movisur para Huawei con acceso ordenado a versiones y herramientas internas.",
-  },
-  {
-    title: "Movisur Oppo",
-    device: "OP",
-    platform: "M",
-    text: "Version para Oppo con instalacion directa y acceso a las funciones principales.",
-  },
-  {
-    title: "Movisur Vivo",
-    device: "VI",
-    platform: "M",
-    text: "Paquete compatible con Vivo para descargar, instalar y mantener tu herramienta lista.",
-  },
-  {
-    title: "Movisur Realme",
-    device: "RE",
-    platform: "M",
-    text: "Instalador para Realme enfocado en rendimiento, orden y acceso rapido a recursos.",
-  },
-  {
-    title: "Movisur Tecno",
-    device: "TE",
-    platform: "M",
-    text: "Version Movisur para Tecno con soporte para descargas y archivos compartidos.",
-  },
-  {
-    title: "Movisur Infinix",
-    device: "IN",
-    platform: "M",
-    text: "Paquete para Infinix preparado para gestionar versiones desde una experiencia simple.",
-  },
-  {
-    title: "Movisur ZTE",
-    device: "ZT",
-    platform: "M",
-    text: "Descarga para equipos ZTE con acceso claro a la herramienta y sus recursos.",
-  },
-];
-
 const deviceBrands = ["Samsung", "LG", "Xiaomi", "Honor"];
 
 type FrontendCategory = {
@@ -121,6 +46,8 @@ type CreatorCommerceSection = {
 type FrontendBodyProps = {
   categories: FrontendCategory[];
   creatorCommerceSections: CreatorCommerceSection[];
+  downloadRetryAfter?: string;
+  downloadStatus?: string;
   hasConfirmedPurchase: boolean;
   productFiles: FrontendProductFile[];
 };
@@ -128,6 +55,8 @@ type FrontendBodyProps = {
 export default function FrontendBody({
   categories,
   creatorCommerceSections,
+  downloadRetryAfter,
+  downloadStatus,
   hasConfirmedPurchase,
   productFiles,
 }: FrontendBodyProps) {
@@ -135,31 +64,18 @@ export default function FrontendBody({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const frontendProducts =
-    productFiles.length > 0
-      ? productFiles.map((file) => ({
-          id: file.id,
-          productUrl: `/productos/${file.slug}`,
-          title: file.name,
-          text: file.description,
-          imageUrl: file.imageUrl || file.category?.imageUrl || null,
-          categoryId: file.categoryId,
-          categoryName: file.category?.name || "",
-          downloadUrl: `/api/movisur/product-files/${file.id}/download`,
-          isForSale: file.isForSale,
-          fileType: file.fileType,
-        }))
-      : products.map((product) => ({
-          id: product.title,
-          productUrl: "/informacion",
-          ...product,
-          imageUrl: null,
-          categoryId: null,
-          categoryName: "",
-          downloadUrl: "/api/movisur/download",
-          isForSale: false,
-          fileType: "zip",
-        }));
+  const frontendProducts = productFiles.map((file) => ({
+    id: file.id,
+    productUrl: `/productos/${file.slug}`,
+    title: file.name,
+    text: file.description,
+    imageUrl: file.imageUrl || file.category?.imageUrl || null,
+    categoryId: file.categoryId,
+    categoryName: file.category?.name || "",
+    downloadUrl: `/api/movisur/product-files/${file.id}/download`,
+    isForSale: file.isForSale,
+    fileType: file.fileType,
+  }));
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const categoryFiltered =
@@ -190,6 +106,17 @@ export default function FrontendBody({
           name: brand,
           imageUrl: null,
         }));
+  const downloadMessage =
+    downloadStatus === "empty"
+      ? "Aún no hay una versión pública de Movisur Tool disponible. El admin debe subir y activar el archivo."
+      : downloadStatus === "blocked"
+      ? `Hay muchos intentos de descarga. Intenta nuevamente en ${Math.max(
+          1,
+          Math.ceil(Number(downloadRetryAfter || 0) / 60)
+        )} min.`
+      : downloadStatus === "forbidden"
+      ? "La descarga debe iniciarse desde Movisur. Vuelve a presionar el botón de descarga."
+      : "";
 
   return (
     <main className="bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
@@ -258,6 +185,12 @@ export default function FrontendBody({
               Informacion
             </Link>
           </div>
+
+          {downloadMessage ? (
+            <p className="mt-5 max-w-xl rounded-lg border border-brand-100 bg-white px-4 py-3 text-sm font-semibold text-brand-500 shadow-theme-xs dark:border-brand-500/20 dark:bg-gray-900">
+              {downloadMessage}
+            </p>
+          ) : null}
 
         </div>
       </section>

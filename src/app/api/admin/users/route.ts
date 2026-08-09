@@ -6,17 +6,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest) {
   const admin = await requireAdminUser();
 
   if (!admin || admin.role !== "admin") {
     return NextResponse.json({ message: "No autorizado." }, { status: 401 });
   }
 
-  const { id } = await context.params;
   const body = (await request.json().catch(() => ({}))) as {
     firstName?: string;
     lastName?: string;
@@ -35,9 +31,9 @@ export async function PATCH(
   const password = String(body.password || "");
   const confirmPassword = String(body.confirmPassword || "");
 
-  if (!firstName || !lastName || !email) {
+  if (!firstName || !lastName || !email || !password) {
     return NextResponse.json(
-      { message: "Completa nombres, apellidos y correo." },
+      { message: "Completa nombres, apellidos, correo y contraseña." },
       { status: 400 }
     );
   }
@@ -46,46 +42,36 @@ export async function PATCH(
     return NextResponse.json({ message: "Rol inválido." }, { status: 400 });
   }
 
-  if (password || confirmPassword) {
-    if (password.length < 8) {
-      return NextResponse.json(
-        { message: "La contraseña debe tener al menos 8 caracteres." },
-        { status: 400 }
-      );
-    }
-
-    if (password !== confirmPassword) {
-      return NextResponse.json(
-        { message: "Las contraseñas no coinciden." },
-        { status: 400 }
-      );
-    }
+  if (password.length < 8) {
+    return NextResponse.json(
+      { message: "La contraseña debe tener al menos 8 caracteres." },
+      { status: 400 }
+    );
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: { id: true },
-  });
-
-  if (!user) {
+  if (password !== confirmPassword) {
     return NextResponse.json(
-      { message: "El usuario no existe." },
-      { status: 404 }
+      { message: "Las contraseñas no coinciden." },
+      { status: 400 }
     );
   }
 
   try {
-    await prisma.user.update({
-      where: { id },
+    const user = await prisma.user.create({
       data: {
         firstName,
         lastName,
         email,
         phone: phone || null,
         role,
-        ...(password ? { passwordHash: await bcrypt.hash(password, 12) } : {}),
+        passwordHash: await bcrypt.hash(password, 12),
+      },
+      select: {
+        id: true,
       },
     });
+
+    return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
     if (
       typeof error === "object" &&
@@ -99,12 +85,10 @@ export async function PATCH(
       );
     }
 
-    console.error("Admin update user error", error);
+    console.error("Admin create user error", error);
     return NextResponse.json(
-      { message: "No se pudo actualizar el usuario." },
+      { message: "No se pudo crear el usuario." },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ ok: true });
 }
