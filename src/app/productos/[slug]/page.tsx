@@ -217,6 +217,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     : product.isForSale
     ? "Comprar"
     : "Iniciar sesion";
+  const actionOpensNewTab = canAccess && product.fileType === "url";
   const imageUrl = product.imageUrl || product.category?.imageUrl || null;
   const freePreviousRevisionId = product.revisions.find(
     (revision) => !revision.isCurrent
@@ -298,6 +299,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="mt-9 flex flex-wrap justify-center gap-4">
               <Link
                 href={actionHref}
+                target={actionOpensNewTab ? "_blank" : undefined}
+                rel={actionOpensNewTab ? "noopener noreferrer" : undefined}
                 className="rounded-lg bg-brand-500 px-8 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
               >
                 {actionLabel}
@@ -340,6 +343,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           }
           actionHref={actionHref}
           actionLabel={actionLabel}
+          actionOpensNewTab={actionOpensNewTab}
           canAccess={canAccess}
           requiresPurchase={product.isForSale}
           revisions={product.revisions.map((revision) => ({
@@ -349,6 +353,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             fileSize: formatSize(revision.fileSize),
             isCurrent: revision.isCurrent,
             uploadedAt: revision.createdAt.toISOString(),
+            opensNewTab: revision.fileType === "url",
             downloadHref:
               product.isForSale
                 ? authContext.hasConfirmedPurchase

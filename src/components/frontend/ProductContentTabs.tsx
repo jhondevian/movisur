@@ -13,6 +13,7 @@ type ProductRevision = {
   uploadedAt: string;
   downloadHref: string;
   canDownload: boolean;
+  opensNewTab: boolean;
 };
 
 type ProductContentTabsProps = {
@@ -20,6 +21,7 @@ type ProductContentTabsProps = {
   actionHref: string;
   actionLabel: string;
   canAccess: boolean;
+  actionOpensNewTab: boolean;
   requiresPurchase: boolean;
   revisions: ProductRevision[];
 };
@@ -44,6 +46,7 @@ export default function ProductContentTabs({
   actionHref,
   actionLabel,
   canAccess,
+  actionOpensNewTab,
   requiresPurchase,
   revisions,
 }: ProductContentTabsProps) {
@@ -107,6 +110,8 @@ export default function ProductContentTabs({
                 {canAccess ? (
                   <Link
                     href={actionHref}
+                    target={actionOpensNewTab ? "_blank" : undefined}
+                    rel={actionOpensNewTab ? "noopener noreferrer" : undefined}
                     className="mt-7 inline-flex w-full items-center justify-center rounded-lg bg-brand-500 px-6 py-4 text-base font-semibold text-white transition hover:bg-brand-600"
                   >
                     {actionLabel}
@@ -151,6 +156,16 @@ export default function ProductContentTabs({
                       </span>
                       <Link
                         href={revision.downloadHref}
+                        target={
+                          revision.canDownload && revision.opensNewTab
+                            ? "_blank"
+                            : undefined
+                        }
+                        rel={
+                          revision.canDownload && revision.opensNewTab
+                            ? "noopener noreferrer"
+                            : undefined
+                        }
                         className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
                           revision.canDownload
                             ? "bg-brand-500 text-white hover:bg-brand-600"

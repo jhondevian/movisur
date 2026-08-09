@@ -373,6 +373,18 @@ export default function FrontendBody({
                     ? "/informacion?comprar=1"
                     : product.downloadUrl
                 }
+                target={
+                  product.fileType === "url" &&
+                  (!product.isForSale || hasConfirmedPurchase)
+                    ? "_blank"
+                    : undefined
+                }
+                rel={
+                  product.fileType === "url" &&
+                  (!product.isForSale || hasConfirmedPurchase)
+                    ? "noopener noreferrer"
+                    : undefined
+                }
                 className="mt-auto flex w-full items-center justify-center rounded-lg bg-brand-500 px-5 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
               >
                 {product.isForSale && !hasConfirmedPurchase
