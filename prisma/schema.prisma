@@ -1,0 +1,497 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  moderador
+  creador
+  usuario
+}
+
+enum VersionPlatform {
+  android
+  ios
+  windows
+  macos
+  web
+}
+
+enum VersionReleaseType {
+  stable
+  beta
+  alpha
+}
+
+enum VersionDistribution {
+  url
+  file
+}
+
+enum PaymentMethodCode {
+  paypal
+  binance
+  mercadopago
+  transferencia
+}
+
+enum CreatorRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  firstName    String    @map("first_name") @db.VarChar(120)
+  lastName     String    @map("last_name") @db.VarChar(120)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash")
+  phone        String?   @db.VarChar(40)
+  avatarUrl    String?   @map("avatar_url") @db.VarChar(255)
+  role         Role      @default(usuario)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz(6)
+  productFiles  MovisurProductFile[]
+  productFileRevisions MovisurProductFileRevision[]
+  productFileReviews MovisurProductFileReview[]
+  productFileDownloads MovisurProductFileDownload[]
+  vendorReviewsGiven CreatorVendorReview[] @relation("VendorReviewReviewer")
+  vendorReviewsReceived CreatorVendorReview[] @relation("VendorReviewCreator")
+  creatorLicenseOffers CreatorLicenseOffer[]
+  creatorRentalOffers CreatorRentalOffer[]
+  creatorPaymentMethods CreatorPaymentMethod[]
+  receivedNotifications AdminNotification[] @relation("NotificationRecipient")
+  ownedLicenseAccounts CreatorLicenseAccount[] @relation("CreatorLicenseAccountOwner")
+  assignedLicenseAccounts CreatorLicenseAccount[] @relation("CreatorLicenseAccountBuyer")
+  ownedRentalAccounts CreatorRentalAccount[] @relation("CreatorRentalAccountOwner")
+  assignedRentalAccounts CreatorRentalAccount[] @relation("CreatorRentalAccountBuyer")
+  uploadedProductFileReviews MovisurProductFileReview[] @relation("ProductFileReviewUploader")
+  creatorRequests CreatorAccessRequest[] @relation("CreatorRequestUser")
+  reviewedCreatorRequests CreatorAccessRequest[] @relation("CreatorRequestReviewer")
+
+  @@index([email], map: "users_email_idx")
+  @@map("users")
+}
+
+model CreatorAccessRequest {
+  id          String               @id @default(uuid()) @db.Uuid
+  userId      String               @map("user_id") @db.Uuid
+  status      CreatorRequestStatus @default(pending)
+  publicName  String               @map("public_name") @db.VarChar(120)
+  country     String               @db.VarChar(80)
+  specialty   String?              @db.VarChar(160)
+  whatsapp    String?              @db.VarChar(40)
+  imageUrl    String?              @map("image_url") @db.VarChar(255)
+  message     String?
+  reviewedById String?             @map("reviewed_by_id") @db.Uuid
+  reviewedAt  DateTime?            @map("reviewed_at") @db.Timestamptz(6)
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user        User                 @relation("CreatorRequestUser", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy  User?                @relation("CreatorRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt], map: "creator_access_requests_status_idx")
+  @@index([userId, status], map: "creator_access_requests_user_status_idx")
+  @@map("creator_access_requests")
+}
+
+model MovisurVersion {
+  id            String              @id @default(uuid()) @db.Uuid
+  version       String              @db.VarChar(40)
+  buildNumber   Int                 @map("build_number")
+  platform      VersionPlatform     @default(android)
+  releaseType   VersionReleaseType  @default(stable) @map("release_type")
+  distribution  VersionDistribution @default(url)
+  downloadUrl   String              @map("download_url")
+  uploadKey     String?             @unique @map("upload_key") @db.VarChar(80)
+  fileName      String?             @map("file_name") @db.VarChar(255)
+  fileSize      Int?                @map("file_size")
+  changelog     String?
+  downloads     Int                 @default(0)
+  forceUpdate   Boolean             @default(false) @map("force_update")
+  isActive      Boolean             @default(true) @map("is_active")
+  isSaleVersion Boolean             @default(false) @map("is_sale_version")
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([platform, buildNumber], map: "movisur_versions_platform_build_key")
+  @@index([platform, isActive, createdAt], map: "movisur_versions_public_idx")
+  @@map("movisur_versions")
+}
+
+model MovisurSaleSettings {
+  id          String   @id @default("default")
+  productName String   @default("Movisur Tool") @map("product_name") @db.VarChar(120)
+  price       Decimal  @default(0) @db.Decimal(10, 2)
+  currency    String   @default("USD") @db.VarChar(10)
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("movisur_sale_settings")
+}
+
+model MovisurSalePlan {
+  id             String                    @id @default(uuid()) @db.Uuid
+  name           String                    @db.VarChar(100)
+  durationMonths Int                       @map("duration_months")
+  price          Decimal                   @default(0) @db.Decimal(10, 2)
+  isActive       Boolean                   @default(true) @map("is_active")
+  sortOrder      Int                       @default(0) @map("sort_order")
+  createdAt      DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  includedItems  MovisurPlanIncludedItem[]
+
+  @@map("movisur_sale_plans")
+}
+
+model MovisurPlanIncludedItem {
+  id        String          @id @default(uuid()) @db.Uuid
+  planId    String          @map("plan_id") @db.Uuid
+  name      String          @db.VarChar(120)
+  sortOrder Int             @default(0) @map("sort_order")
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  plan      MovisurSalePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("movisur_plan_included_items")
+}
+
+model MovisurPaymentMethod {
+  id        String            @id @default(uuid()) @db.Uuid
+  code      PaymentMethodCode @unique
+  name      String            @db.VarChar(80)
+  details   String?
+  isEnabled Boolean           @default(false) @map("is_enabled")
+  sortOrder Int               @default(0) @map("sort_order")
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("movisur_payment_methods")
+}
+
+model CreatorPaymentMethod {
+  id        String            @id @default(uuid()) @db.Uuid
+  creatorId String            @map("creator_id") @db.Uuid
+  code      PaymentMethodCode
+  name      String            @db.VarChar(80)
+  details   String?
+  isEnabled Boolean           @default(false) @map("is_enabled")
+  sortOrder Int               @default(0) @map("sort_order")
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  creator   User              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, code], map: "creator_payment_methods_creator_code_key")
+  @@index([creatorId, isEnabled], map: "creator_payment_methods_creator_idx")
+  @@map("creator_payment_methods")
+}
+
+model MovisurBrandCategory {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  code        String   @unique @db.VarChar(40)
+  description String?
+  imageUrl    String?  @map("image_url") @db.VarChar(255)
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  productFiles MovisurProductFile[]
+
+  @@index([isActive, sortOrder], map: "movisur_brand_categories_public_idx")
+  @@map("movisur_brand_categories")
+}
+
+model CreatorLicenseProduct {
+  id          String               @id @default(uuid()) @db.Uuid
+  name        String               @db.VarChar(120)
+  slug        String               @unique @db.VarChar(140)
+  description String?
+  imageUrl    String?              @map("image_url") @db.VarChar(255)
+  isActive    Boolean              @default(true) @map("is_active")
+  sortOrder   Int                  @default(0) @map("sort_order")
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  plans       CreatorLicensePlan[]
+  offers      CreatorLicenseOffer[]
+
+  @@index([isActive, sortOrder], map: "creator_license_products_public_idx")
+  @@map("creator_license_products")
+}
+
+model CreatorLicensePlan {
+  id        String                @id @default(uuid()) @db.Uuid
+  productId String                @map("product_id") @db.Uuid
+  name      String                @db.VarChar(100)
+  durationMonths Int              @map("duration_months")
+  price     Decimal               @default(0) @db.Decimal(10, 2)
+  currency  String                @default("USD") @db.VarChar(10)
+  isActive  Boolean               @default(true) @map("is_active")
+  sortOrder Int                   @default(0) @map("sort_order")
+  createdAt DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  product   CreatorLicenseProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  offers    CreatorLicenseOffer[]
+
+  @@index([productId, isActive, sortOrder], map: "creator_license_plans_product_idx")
+  @@map("creator_license_plans")
+}
+
+model CreatorLicenseOffer {
+  id        String                @id @default(uuid()) @db.Uuid
+  creatorId String                @map("creator_id") @db.Uuid
+  productId String                @map("product_id") @db.Uuid
+  planId    String                @map("plan_id") @db.Uuid
+  price     Decimal               @default(0) @db.Decimal(10, 2)
+  currency  String                @default("USD") @db.VarChar(10)
+  isActive  Boolean               @default(false) @map("is_active")
+  createdAt DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  creator   User                  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  product   CreatorLicenseProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plan      CreatorLicensePlan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  accounts  CreatorLicenseAccount[]
+
+  @@unique([creatorId, planId], map: "creator_license_offers_creator_plan_key")
+  @@index([creatorId, isActive], map: "creator_license_offers_creator_idx")
+  @@index([productId, isActive], map: "creator_license_offers_product_idx")
+  @@map("creator_license_offers")
+}
+
+model CreatorLicenseAccount {
+  id                     String              @id @default(uuid()) @db.Uuid
+  creatorId              String              @map("creator_id") @db.Uuid
+  offerId                String              @map("offer_id") @db.Uuid
+  username               String              @db.VarChar(180)
+  password               String              @db.VarChar(180)
+  note                   String?
+  isActive               Boolean             @default(true) @map("is_active")
+  assignedToId           String?             @map("assigned_to_id") @db.Uuid
+  purchaseNotificationId String?             @map("purchase_notification_id") @db.Uuid
+  assignedAt             DateTime?           @map("assigned_at") @db.Timestamptz(6)
+  assignedExpiresAt      DateTime?           @map("assigned_expires_at") @db.Timestamptz(6)
+  createdAt              DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  creator                User                @relation("CreatorLicenseAccountOwner", fields: [creatorId], references: [id], onDelete: Cascade)
+  assignedTo             User?               @relation("CreatorLicenseAccountBuyer", fields: [assignedToId], references: [id], onDelete: SetNull)
+  offer                  CreatorLicenseOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, isActive], map: "creator_license_accounts_creator_idx")
+  @@index([offerId, assignedToId], map: "creator_license_accounts_offer_assignment_idx")
+  @@index([offerId, assignedExpiresAt], map: "creator_license_accounts_offer_expiration_idx")
+  @@index([assignedToId], map: "creator_license_accounts_buyer_idx")
+  @@map("creator_license_accounts")
+}
+
+model CreatorRentalTool {
+  id          String              @id @default(uuid()) @db.Uuid
+  name        String              @db.VarChar(120)
+  slug        String              @unique @db.VarChar(140)
+  description String?
+  imageUrl    String?             @map("image_url") @db.VarChar(255)
+  isActive    Boolean             @default(true) @map("is_active")
+  sortOrder   Int                 @default(0) @map("sort_order")
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  plans       CreatorRentalPlan[]
+  offers      CreatorRentalOffer[]
+
+  @@index([isActive, sortOrder], map: "creator_rental_tools_public_idx")
+  @@map("creator_rental_tools")
+}
+
+model CreatorRentalPlan {
+  id        String            @id @default(uuid()) @db.Uuid
+  toolId    String            @map("tool_id") @db.Uuid
+  name      String            @db.VarChar(100)
+  durationMonths Int          @map("duration_months")
+  price     Decimal           @default(0) @db.Decimal(10, 2)
+  currency  String            @default("USD") @db.VarChar(10)
+  isActive  Boolean           @default(true) @map("is_active")
+  sortOrder Int               @default(0) @map("sort_order")
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tool      CreatorRentalTool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  offers    CreatorRentalOffer[]
+
+  @@index([toolId, isActive, sortOrder], map: "creator_rental_plans_tool_idx")
+  @@map("creator_rental_plans")
+}
+
+model CreatorRentalOffer {
+  id        String            @id @default(uuid()) @db.Uuid
+  creatorId String            @map("creator_id") @db.Uuid
+  toolId    String            @map("tool_id") @db.Uuid
+  planId    String            @map("plan_id") @db.Uuid
+  price     Decimal           @default(0) @db.Decimal(10, 2)
+  currency  String            @default("USD") @db.VarChar(10)
+  isActive  Boolean           @default(false) @map("is_active")
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  creator   User              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  tool      CreatorRentalTool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  plan      CreatorRentalPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  accounts  CreatorRentalAccount[]
+
+  @@unique([creatorId, planId], map: "creator_rental_offers_creator_plan_key")
+  @@index([creatorId, isActive], map: "creator_rental_offers_creator_idx")
+  @@index([toolId, isActive], map: "creator_rental_offers_tool_idx")
+  @@map("creator_rental_offers")
+}
+
+model CreatorRentalAccount {
+  id                     String             @id @default(uuid()) @db.Uuid
+  creatorId              String             @map("creator_id") @db.Uuid
+  offerId                String             @map("offer_id") @db.Uuid
+  username               String             @db.VarChar(180)
+  password               String             @db.VarChar(180)
+  note                   String?
+  isActive               Boolean            @default(true) @map("is_active")
+  assignedToId           String?            @map("assigned_to_id") @db.Uuid
+  purchaseNotificationId String?            @map("purchase_notification_id") @db.Uuid
+  assignedAt             DateTime?          @map("assigned_at") @db.Timestamptz(6)
+  assignedExpiresAt      DateTime?          @map("assigned_expires_at") @db.Timestamptz(6)
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  creator                User               @relation("CreatorRentalAccountOwner", fields: [creatorId], references: [id], onDelete: Cascade)
+  assignedTo             User?              @relation("CreatorRentalAccountBuyer", fields: [assignedToId], references: [id], onDelete: SetNull)
+  offer                  CreatorRentalOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, isActive], map: "creator_rental_accounts_creator_idx")
+  @@index([offerId, assignedToId], map: "creator_rental_accounts_offer_assignment_idx")
+  @@index([offerId, assignedExpiresAt], map: "creator_rental_accounts_offer_expiration_idx")
+  @@index([assignedToId], map: "creator_rental_accounts_buyer_idx")
+  @@map("creator_rental_accounts")
+}
+
+model MovisurProductFile {
+  id           String                @id @default(uuid()) @db.Uuid
+  name         String                @db.VarChar(140)
+  slug         String                @unique @db.VarChar(160)
+  categoryId   String?               @map("category_id") @db.Uuid
+  description  String?
+  imageUrl     String?               @map("image_url") @db.VarChar(255)
+  distribution VersionDistribution   @default(url)
+  downloadUrl  String                @map("download_url")
+  uploadKey    String?               @unique @map("upload_key") @db.VarChar(80)
+  createdById  String?               @map("created_by_id") @db.Uuid
+  fileType     String                @default("zip") @map("file_type") @db.VarChar(20)
+  fileMimeType String?               @map("file_mime_type") @db.VarChar(120)
+  fileName     String?               @map("file_name") @db.VarChar(255)
+  fileSize     Int?                  @map("file_size")
+  downloads    Int                   @default(0)
+  isActive     Boolean               @default(true) @map("is_active")
+  isForSale    Boolean               @default(false) @map("is_for_sale")
+  sortOrder    Int                   @default(0) @map("sort_order")
+  deletedAt    DateTime?             @map("deleted_at") @db.Timestamptz(6)
+  deletedById  String?               @map("deleted_by_id") @db.Uuid
+  createdAt    DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  creator      User?                 @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  category     MovisurBrandCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  revisions    MovisurProductFileRevision[]
+  reviews      MovisurProductFileReview[]
+  userDownloads MovisurProductFileDownload[]
+
+  @@index([isActive, isForSale, sortOrder], map: "movisur_product_files_public_idx")
+  @@index([categoryId], map: "movisur_product_files_category_idx")
+  @@index([createdById], map: "movisur_product_files_creator_idx")
+  @@index([createdById, deletedAt], map: "movisur_product_files_trash_idx")
+  @@map("movisur_product_files")
+}
+
+model MovisurProductFileReview {
+  id            String             @id @default(uuid()) @db.Uuid
+  productFileId String             @map("product_file_id") @db.Uuid
+  userId        String             @map("user_id") @db.Uuid
+  uploaderId    String?            @map("uploader_id") @db.Uuid
+  rating        Int
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  productFile   MovisurProductFile @relation(fields: [productFileId], references: [id], onDelete: Cascade)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploader      User?              @relation("ProductFileReviewUploader", fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  @@unique([productFileId, userId], map: "movisur_product_file_reviews_user_key")
+  @@index([productFileId], map: "movisur_product_file_reviews_product_idx")
+  @@index([uploaderId], map: "movisur_product_file_reviews_uploader_idx")
+  @@map("movisur_product_file_reviews")
+}
+
+model CreatorVendorReview {
+  id         String   @id @default(uuid()) @db.Uuid
+  creatorId  String   @map("creator_id") @db.Uuid
+  reviewerId String   @map("reviewer_id") @db.Uuid
+  rating     Int
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  creator    User     @relation("VendorReviewCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  reviewer   User     @relation("VendorReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, reviewerId], map: "creator_vendor_reviews_user_key")
+  @@index([creatorId], map: "creator_vendor_reviews_creator_idx")
+  @@index([reviewerId], map: "creator_vendor_reviews_reviewer_idx")
+  @@map("creator_vendor_reviews")
+}
+
+model MovisurProductFileDownload {
+  id               String             @id @default(uuid()) @db.Uuid
+  productFileId    String             @map("product_file_id") @db.Uuid
+  userId           String             @map("user_id") @db.Uuid
+  downloadCount    Int                @default(1) @map("download_count")
+  firstDownloadedAt DateTime          @default(now()) @map("first_downloaded_at") @db.Timestamptz(6)
+  lastDownloadedAt DateTime           @default(now()) @map("last_downloaded_at") @db.Timestamptz(6)
+  productFile      MovisurProductFile @relation(fields: [productFileId], references: [id], onDelete: Cascade)
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productFileId, userId], map: "movisur_product_file_downloads_user_key")
+  @@index([productFileId], map: "movisur_product_file_downloads_product_idx")
+  @@index([userId], map: "movisur_product_file_downloads_user_idx")
+  @@map("movisur_product_file_downloads")
+}
+
+model MovisurProductFileRevision {
+  id            String              @id @default(uuid()) @db.Uuid
+  productFileId String              @map("product_file_id") @db.Uuid
+  versionNumber Int                 @map("version_number")
+  distribution  VersionDistribution @default(url)
+  downloadUrl   String              @map("download_url")
+  fileType      String              @default("zip") @map("file_type") @db.VarChar(20)
+  fileMimeType  String?             @map("file_mime_type") @db.VarChar(120)
+  fileName      String?             @map("file_name") @db.VarChar(255)
+  fileSize      Int?                @map("file_size")
+  isCurrent     Boolean             @default(false) @map("is_current")
+  createdById   String?             @map("created_by_id") @db.Uuid
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  productFile   MovisurProductFile  @relation(fields: [productFileId], references: [id], onDelete: Cascade)
+  creator       User?               @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([productFileId, versionNumber], map: "movisur_product_file_revisions_version_key")
+  @@index([productFileId, isCurrent, versionNumber], map: "movisur_product_file_revisions_current_idx")
+  @@index([createdById], map: "movisur_product_file_revisions_creator_idx")
+  @@map("movisur_product_file_revisions")
+}
+
+model AdminNotification {
+  id              String   @id @default(uuid()) @db.Uuid
+  recipientUserId String?  @map("recipient_user_id") @db.Uuid
+  type            String   @db.VarChar(80)
+  title           String   @db.VarChar(160)
+  message         String
+  metadata        String?
+  isRead          Boolean  @default(false) @map("is_read")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  recipient       User?    @relation("NotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  @@index([isRead, createdAt], map: "admin_notifications_unread_idx")
+  @@index([recipientUserId, isRead, createdAt], map: "admin_notifications_recipient_idx")
+  @@map("admin_notifications")
+}

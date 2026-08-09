@@ -1,0 +1,3 @@
+ALTER TABLE "users"
+ADD COLUMN "phone" VARCHAR(40),
+ADD COLUMN "avatar_url" VARCHAR(255);

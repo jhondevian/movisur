@@ -1,4 +1,4 @@
 declare module 'jsvectormap' {
-    const jsVectorMap: any;
+    const jsVectorMap: unknown;
     export default jsVectorMap;
 }

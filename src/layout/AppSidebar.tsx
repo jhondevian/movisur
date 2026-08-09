@@ -1,23 +1,17 @@
 "use client";
 import React, { useEffect, useRef, useState,useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
-  CalenderIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
-  PageIcon,
-  PieChartIcon,
-  PlugInIcon,
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
-import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
   name: string;
@@ -26,77 +20,158 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
+export type SidebarVariant = "admin" | "usuario" | "creador" | "moderador";
+
+const adminNavItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
-    subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
-    ],
-  },
-];
-
-const othersItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: "Charts",
-    subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
-    ],
+    subItems: [{ name: "Movisur", path: "/admin", pro: false }],
   },
   {
     icon: <BoxCubeIcon />,
-    name: "UI Elements",
+    name: "Movisur",
     subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
+      { name: "Versiones", path: "/admin/movisur", pro: false },
+      { name: "Venta", path: "/admin/movisur/venta", pro: false },
+      { name: "Configuracion", path: "/admin/movisur/configuracion", pro: false },
     ],
   },
   {
-    icon: <PlugInIcon />,
-    name: "Authentication",
+    icon: <TableIcon />,
+    name: "Compras",
+    path: "/admin/compras",
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "Creadores",
     subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
+      { name: "Solicitudes", path: "/admin/creadores/solicitudes", pro: false },
+      { name: "Administrar", path: "/admin/creadores", pro: false },
     ],
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "Usuarios",
+    path: "/admin/usuarios",
+  },
+  {
+    icon: <ListIcon />,
+    name: "Archivos",
+    path: "/admin/archivos",
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "Perfil",
+    path: "/admin/profile",
   },
 ];
 
-const AppSidebar: React.FC = () => {
+const roleNavItems: Record<Exclude<SidebarVariant, "admin">, NavItem[]> = {
+  usuario: [
+    {
+      icon: <GridIcon />,
+      name: "Usuario",
+      subItems: [
+        { name: "Resumen", path: "/usuario", pro: false },
+        { name: "Mis compras", path: "/usuario/compras", pro: false },
+        { name: "Mis accesos", path: "/usuario/accesos", pro: false },
+        { name: "Descargas", path: "/usuario/descargas", pro: false },
+      ],
+    },
+    {
+      icon: <UserCircleIcon />,
+      name: "Perfil",
+      path: "/usuario/perfil",
+    },
+  ],
+  creador: [
+    {
+      icon: <GridIcon />,
+      name: "Creador",
+      subItems: [
+        { name: "Resumen", path: "/creador", pro: false },
+        { name: "Archivos", path: "/creador/archivos", pro: false },
+        { name: "Licencias", path: "/creador/licencias", pro: false },
+        { name: "Alquiler", path: "/creador/alquiler", pro: false },
+        { name: "Compras", path: "/creador/compras", pro: false },
+      ],
+    },
+    {
+      icon: <UserCircleIcon />,
+      name: "Perfil",
+      path: "/creador/perfil",
+    },
+  ],
+  moderador: [
+    {
+      icon: <GridIcon />,
+      name: "Moderador",
+      subItems: [
+        { name: "Resumen", path: "/moderador", pro: false },
+        { name: "Revisiones", path: "/moderador/revisiones", pro: false },
+        { name: "Reportes", path: "/moderador/reportes", pro: false },
+      ],
+    },
+    {
+      icon: <UserCircleIcon />,
+      name: "Perfil",
+      path: "/moderador/perfil",
+    },
+  ],
+};
+
+const AppSidebar: React.FC<{ variant?: SidebarVariant }> = ({
+  variant = "admin",
+}) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const [creatorTrashCount, setCreatorTrashCount] = useState(0);
+  const isActive = useCallback((path: string) => path === pathname, [pathname]);
+  useEffect(() => {
+    if (variant !== "creador") return;
+
+    let isMounted = true;
+
+    fetch("/api/creador/archivos/basurero/count", {
+      cache: "no-store",
+    })
+      .then((response) => (response.ok ? response.json() : { count: 0 }))
+      .then((data) => {
+        if (isMounted) {
+          setCreatorTrashCount(Number(data?.count || 0));
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCreatorTrashCount(0);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [variant, pathname]);
+
+  const baseNavItems = variant === "admin" ? adminNavItems : roleNavItems[variant];
+  const navItems =
+    variant === "creador" && creatorTrashCount > 0
+      ? baseNavItems.map((item) =>
+          item.name === "Creador" && item.subItems
+            ? {
+                ...item,
+                subItems: [
+                  ...item.subItems.slice(0, 2),
+                  {
+                    name: "Basurero",
+                    path: "/creador/archivos/basurero",
+                    pro: false,
+                  },
+                  ...item.subItems.slice(2),
+                ],
+              }
+            : item
+        )
+      : baseNavItems;
+  const homePath = variant === "admin" ? "/admin" : `/${variant}`;
 
   const renderMenuItems = (
     navItems: NavItem[],
@@ -109,7 +184,7 @@ const AppSidebar: React.FC = () => {
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
               className={`menu-item group  ${
-                openSubmenu?.type === menuType && openSubmenu?.index === index
+                displayedOpenSubmenu?.type === menuType && displayedOpenSubmenu?.index === index
                   ? "menu-item-active"
                   : "menu-item-inactive"
               } cursor-pointer ${
@@ -120,7 +195,7 @@ const AppSidebar: React.FC = () => {
             >
               <span
                 className={` ${
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
+                  displayedOpenSubmenu?.type === menuType && displayedOpenSubmenu?.index === index
                     ? "menu-item-icon-active"
                     : "menu-item-icon-inactive"
                 }`}
@@ -133,8 +208,8 @@ const AppSidebar: React.FC = () => {
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronDownIcon
                   className={`ml-auto w-5 h-5 transition-transform duration-200  ${
-                    openSubmenu?.type === menuType &&
-                    openSubmenu?.index === index
+                    displayedOpenSubmenu?.type === menuType &&
+                    displayedOpenSubmenu?.index === index
                       ? "rotate-180 text-brand-500"
                       : ""
                   }`}
@@ -172,7 +247,7 @@ const AppSidebar: React.FC = () => {
               className="overflow-hidden transition-all duration-300"
               style={{
                 height:
-                  openSubmenu?.type === menuType && openSubmenu?.index === index
+                  displayedOpenSubmenu?.type === menuType && displayedOpenSubmenu?.index === index
                     ? `${subMenuHeight[`${menuType}-${index}`]}px`
                     : "0px",
               }}
@@ -224,48 +299,37 @@ const AppSidebar: React.FC = () => {
     </ul>
   );
 
+  const getActiveSubmenu = () => {
+    for (const menuType of ["main", "others"] as const) {
+      const items = menuType === "main" ? navItems : [];
+      const index = items.findIndex((nav) =>
+        nav.subItems?.some((subItem) => isActive(subItem.path))
+      );
+
+      if (index !== -1) {
+        return { type: menuType, index };
+      }
+    }
+
+    return null;
+  };
+
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
     index: number;
   } | null>(null);
+  const displayedOpenSubmenu = openSubmenu ?? getActiveSubmenu();
+  const displayedOpenSubmenuType = displayedOpenSubmenu?.type;
+  const displayedOpenSubmenuIndex = displayedOpenSubmenu?.index;
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
     {}
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => path === pathname;
-   const isActive = useCallback((path: string) => path === pathname, [pathname]);
-
-  useEffect(() => {
-    // Check if the current path matches any submenu item
-    let submenuMatched = false;
-    ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
-      items.forEach((nav, index) => {
-        if (nav.subItems) {
-          nav.subItems.forEach((subItem) => {
-            if (isActive(subItem.path)) {
-              setOpenSubmenu({
-                type: menuType as "main" | "others",
-                index,
-              });
-              submenuMatched = true;
-            }
-          });
-        }
-      });
-    });
-
-    // If no submenu item matches, close the open submenu
-    if (!submenuMatched) {
-      setOpenSubmenu(null);
-    }
-  }, [pathname,isActive]);
-
   useEffect(() => {
     // Set the height of the submenu items when the submenu is opened
-    if (openSubmenu !== null) {
-      const key = `${openSubmenu.type}-${openSubmenu.index}`;
+    if (displayedOpenSubmenuType && displayedOpenSubmenuIndex !== undefined) {
+      const key = `${displayedOpenSubmenuType}-${displayedOpenSubmenuIndex}`;
       if (subMenuRefs.current[key]) {
         setSubMenuHeight((prevHeights) => ({
           ...prevHeights,
@@ -273,14 +337,14 @@ const AppSidebar: React.FC = () => {
         }));
       }
     }
-  }, [openSubmenu]);
+  }, [displayedOpenSubmenuType, displayedOpenSubmenuIndex]);
 
   const handleSubmenuToggle = (index: number, menuType: "main" | "others") => {
-    setOpenSubmenu((prevOpenSubmenu) => {
+    setOpenSubmenu(() => {
       if (
-        prevOpenSubmenu &&
-        prevOpenSubmenu.type === menuType &&
-        prevOpenSubmenu.index === index
+        displayedOpenSubmenu &&
+        displayedOpenSubmenu.type === menuType &&
+        displayedOpenSubmenu.index === index
       ) {
         return null;
       }
@@ -308,31 +372,20 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link href="/">
+        <Link href={homePath}>
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <Image
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <Image
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+            <span className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-lg font-bold text-white">
+                M
+              </span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                Movisur
+              </span>
+            </span>
           ) : (
-            <Image
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-lg font-bold text-white">
+              M
+            </span>
           )}
         </Link>
       </div>
@@ -356,25 +409,8 @@ const AppSidebar: React.FC = () => {
               {renderMenuItems(navItems, "main")}
             </div>
 
-            <div className="">
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(othersItems, "others")}
-            </div>
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
       </div>
     </aside>
   );

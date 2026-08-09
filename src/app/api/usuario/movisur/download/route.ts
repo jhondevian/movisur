@@ -1,0 +1,115 @@
+import { authCookieName, verifyAuthToken } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+
+const buyerDownloadRateLimit = {
+  limit: 12,
+  windowMs: 60_000,
+  blockMs: 15 * 60_000,
+};
+
+export async function GET(request: NextRequest) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(authCookieName)?.value;
+
+  if (!token) {
+    return NextResponse.redirect(
+      new URL("/signin?next=/usuario/descargas", request.url)
+    );
+  }
+
+  let user;
+
+  try {
+    user = await verifyAuthToken(token);
+  } catch {
+    return NextResponse.redirect(
+      new URL("/signin?next=/usuario/descargas", request.url)
+    );
+  }
+
+  const rateLimit = checkRateLimit(
+    getRateLimitKey(request, "usuario-movisur-download"),
+    buyerDownloadRateLimit
+  );
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { message: "Demasiadas descargas. Intenta nuevamente mas tarde." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfter),
+        },
+      }
+    );
+  }
+
+  const [freeVersion, saleVersion, confirmedPurchase] = await Promise.all([
+    prisma.movisurVersion.findFirst({
+      where: {
+        isActive: true,
+        isSaleVersion: false,
+      },
+      orderBy: [{ buildNumber: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        downloadUrl: true,
+        isSaleVersion: true,
+      },
+    }),
+    prisma.movisurVersion.findFirst({
+      where: {
+        isActive: true,
+        isSaleVersion: true,
+      },
+      orderBy: [{ buildNumber: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        downloadUrl: true,
+        isSaleVersion: true,
+      },
+    }),
+    prisma.adminNotification.findFirst({
+      where: {
+        type: "binance_payment_confirmation",
+        metadata: {
+          contains: `"userId":"${user.id}"`,
+        },
+        AND: [
+          {
+            metadata: {
+              contains: `"purchaseStatus":"confirmed"`,
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    }),
+  ]);
+
+  const version = freeVersion || saleVersion;
+
+  if (!version) {
+    return NextResponse.redirect(
+      new URL("/usuario/descargas?download=empty", request.url)
+    );
+  }
+
+  if (version.isSaleVersion && !confirmedPurchase) {
+    return NextResponse.redirect(new URL("/usuario/compras", request.url));
+  }
+
+  await prisma.movisurVersion.update({
+    where: { id: version.id },
+    data: { downloads: { increment: 1 } },
+  });
+
+  return NextResponse.redirect(new URL(version.downloadUrl, request.url));
+}

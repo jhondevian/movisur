@@ -1,0 +1,528 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+
+const products = [
+  {
+    title: "Movisur Samsung",
+    device: "SA",
+    platform: "M",
+    text: "Version preparada para equipos Samsung con acceso rapido a la herramienta Movisur.",
+  },
+  {
+    title: "Movisur LG",
+    device: "LG",
+    platform: "M",
+    text: "Instalador para dispositivos LG, listo para descargar y mantener tus recursos conectados.",
+  },
+  {
+    title: "Movisur Xiaomi",
+    device: "MI",
+    platform: "M",
+    text: "Paquete compatible con Xiaomi para gestionar archivos, versiones y soporte interno.",
+  },
+  {
+    title: "Movisur Honor",
+    device: "HO",
+    platform: "M",
+    text: "Version para equipos Honor con descarga directa y soporte para recursos compartidos.",
+  },
+  {
+    title: "Movisur Motorola",
+    device: "MO",
+    platform: "M",
+    text: "Instalador estable para Motorola, preparado para trabajar con tus archivos Movisur.",
+  },
+  {
+    title: "Movisur Huawei",
+    device: "HU",
+    platform: "M",
+    text: "Paquete Movisur para Huawei con acceso ordenado a versiones y herramientas internas.",
+  },
+  {
+    title: "Movisur Oppo",
+    device: "OP",
+    platform: "M",
+    text: "Version para Oppo con instalacion directa y acceso a las funciones principales.",
+  },
+  {
+    title: "Movisur Vivo",
+    device: "VI",
+    platform: "M",
+    text: "Paquete compatible con Vivo para descargar, instalar y mantener tu herramienta lista.",
+  },
+  {
+    title: "Movisur Realme",
+    device: "RE",
+    platform: "M",
+    text: "Instalador para Realme enfocado en rendimiento, orden y acceso rapido a recursos.",
+  },
+  {
+    title: "Movisur Tecno",
+    device: "TE",
+    platform: "M",
+    text: "Version Movisur para Tecno con soporte para descargas y archivos compartidos.",
+  },
+  {
+    title: "Movisur Infinix",
+    device: "IN",
+    platform: "M",
+    text: "Paquete para Infinix preparado para gestionar versiones desde una experiencia simple.",
+  },
+  {
+    title: "Movisur ZTE",
+    device: "ZT",
+    platform: "M",
+    text: "Descarga para equipos ZTE con acceso claro a la herramienta y sus recursos.",
+  },
+];
+
+const deviceBrands = ["Samsung", "LG", "Xiaomi", "Honor"];
+
+type FrontendCategory = {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+};
+
+type FrontendProductFile = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+  downloadUrl: string;
+  categoryId: string | null;
+  isForSale: boolean;
+  fileType: string;
+  category: {
+    name: string;
+    imageUrl: string | null;
+  } | null;
+};
+
+type CreatorCommerceItem = {
+  id: string;
+  productUrl: string;
+  title: string;
+  text: string | null;
+  imageUrl: string | null;
+  price: string;
+  currency: string;
+};
+
+type CreatorCommerceSection = {
+  title: string;
+  items: CreatorCommerceItem[];
+};
+
+type FrontendBodyProps = {
+  categories: FrontendCategory[];
+  creatorCommerceSections: CreatorCommerceSection[];
+  hasConfirmedPurchase: boolean;
+  productFiles: FrontendProductFile[];
+};
+
+export default function FrontendBody({
+  categories,
+  creatorCommerceSections,
+  hasConfirmedPurchase,
+  productFiles,
+}: FrontendBodyProps) {
+  const [selectedCategoryId, setSelectedCategoryId] = useState("todos");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const frontendProducts =
+    productFiles.length > 0
+      ? productFiles.map((file) => ({
+          id: file.id,
+          productUrl: `/productos/${file.slug}`,
+          title: file.name,
+          text: file.description,
+          imageUrl: file.imageUrl || file.category?.imageUrl || null,
+          categoryId: file.categoryId,
+          categoryName: file.category?.name || "",
+          downloadUrl: `/api/movisur/product-files/${file.id}/download`,
+          isForSale: file.isForSale,
+          fileType: file.fileType,
+        }))
+      : products.map((product) => ({
+          id: product.title,
+          productUrl: "/informacion",
+          ...product,
+          imageUrl: null,
+          categoryId: null,
+          categoryName: "",
+          downloadUrl: "/api/movisur/download",
+          isForSale: false,
+          fileType: "zip",
+        }));
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const categoryFiltered =
+      selectedCategoryId === "todos"
+        ? frontendProducts
+        : frontendProducts.filter(
+            (product) => product.categoryId === selectedCategoryId
+          );
+
+    if (!normalizedSearch) return categoryFiltered;
+
+    return categoryFiltered.filter((product) =>
+      [product.title, product.text || "", product.categoryName]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch)
+    );
+  }, [frontendProducts, searchTerm, selectedCategoryId]);
+  const availableCategories =
+    categories.length > 0
+      ? categories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          imageUrl: category.imageUrl,
+        }))
+      : deviceBrands.map((brand) => ({
+          id: brand,
+          name: brand,
+          imageUrl: null,
+        }));
+
+  return (
+    <main className="bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
+      <section
+        id="descargar"
+        className="relative overflow-hidden border-b border-gray-100 bg-[linear-gradient(180deg,#f8fbff_0%,#f7f6ff_58%,#eef3ff_100%)] dark:border-gray-900 dark:bg-none dark:bg-gray-950"
+      >
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-12 pt-10 text-center sm:px-6 sm:pb-16 sm:pt-14 lg:px-8">
+          <h1 className="max-w-5xl text-[42px] font-extrabold leading-[1.04] text-gray-950 dark:text-white sm:text-[64px] lg:text-[72px]">
+            Movisur Tool
+          </h1>
+
+          <p className="mt-6 max-w-5xl text-base leading-7 text-gray-600 dark:text-gray-400 sm:text-xl sm:leading-8">
+            Instala la herramienta Movisur, comparte archivos y accede a
+            versiones compatibles para tus dispositivos principales desde una
+            experiencia clara y ordenada.
+          </p>
+
+          <div className="mt-9 flex flex-wrap items-end justify-center gap-x-8 gap-y-6 sm:gap-x-10">
+            {availableCategories.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => {
+                  setSelectedCategoryId(category.id);
+                  setIsFilterOpen(false);
+                  document
+                    .getElementById("operaciones")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="flex w-20 flex-col items-center gap-3 text-center transition hover:-translate-y-0.5 sm:w-24"
+              >
+                <div className="relative flex h-14 w-16 items-center justify-center sm:h-16 sm:w-20">
+                  {category.imageUrl ? (
+                    <Image
+                      src={category.imageUrl}
+                      alt={category.name}
+                      fill
+                      sizes="80px"
+                      className="object-contain"
+                    />
+                  ) : (
+                    <span className="text-xl font-extrabold text-gray-950 dark:text-white">
+                      {category.name.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <span className="line-clamp-1 text-sm font-bold text-gray-950 dark:text-white">
+                  {category.name}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-9 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/api/movisur/download"
+              className="rounded-lg bg-brand-500 px-8 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
+            >
+              Descargar
+            </Link>
+            <Link
+              href="/informacion"
+              className="rounded-lg border border-gray-300 bg-white px-8 py-4 text-base font-semibold text-gray-900 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
+            >
+              Informacion
+            </Link>
+          </div>
+
+        </div>
+      </section>
+
+      <section
+        id="operaciones"
+        className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
+      >
+        <div className="mb-8">
+          <div className="flex items-center justify-between gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCategoryId("todos");
+                setIsFilterOpen(false);
+              }}
+              className={`rounded-lg px-5 py-3 text-sm font-semibold transition ${
+                selectedCategoryId === "todos"
+                  ? "bg-brand-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/10"
+              }`}
+            >
+              Todos
+            </button>
+
+            <div className="flex min-w-0 items-center justify-end gap-2">
+              <div className="flex min-w-0 items-center justify-end gap-2">
+                <div
+                  className={`overflow-hidden transition-all duration-300 ${
+                    isSearchOpen
+                      ? "w-[160px] opacity-100 sm:w-[240px]"
+                      : "w-0 opacity-0"
+                  }`}
+                >
+                  <input
+                    type="search"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Buscar"
+                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSearchOpen((current) => !current)}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/5"
+                  aria-label="Buscar productos"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen((current) => !current)}
+                className="h-11 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-900 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:hover:bg-white/5"
+              >
+                {isFilterOpen ? "Ocultar filtros" : "Filtrar"}
+              </button>
+            </div>
+          </div>
+
+          <div
+            className={`overflow-hidden transition-all duration-300 ${
+              isFilterOpen ? "max-h-36 opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <div className="mt-6 overflow-x-auto pb-2">
+              <div className="mx-auto flex w-max min-w-full snap-x justify-center gap-6">
+                {availableCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategoryId(category.id);
+                      setIsFilterOpen(false);
+                    }}
+                    className="flex w-20 shrink-0 snap-start flex-col items-center gap-3 text-center transition hover:-translate-y-0.5 sm:w-24"
+                  >
+                    <div className="relative flex h-14 w-16 items-center justify-center sm:h-16 sm:w-20">
+                      {category.imageUrl ? (
+                        <Image
+                          src={category.imageUrl}
+                          alt={category.name}
+                          fill
+                          sizes="80px"
+                          className="object-contain"
+                        />
+                      ) : (
+                        <span className="text-xl font-extrabold text-gray-950 dark:text-white">
+                          {category.name.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`line-clamp-1 text-sm font-bold ${
+                        selectedCategoryId === category.id
+                          ? "text-brand-500"
+                          : "text-gray-950 dark:text-white"
+                      }`}
+                    >
+                      {category.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8 flex justify-center">
+          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+            {selectedCategoryId === "todos"
+              ? "Mostrando todos los productos"
+              : `Categoria: ${
+                  availableCategories.find(
+                    (category) => category.id === selectedCategoryId
+                  )?.name || "Seleccionada"
+                }`}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-6">
+          {filteredProducts.map((product) => (
+            <article
+              key={product.id}
+              className="flex min-h-[350px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950"
+            >
+              <Link
+                href={product.productUrl}
+                className="flex min-h-14 items-start justify-center text-xl font-bold leading-snug text-gray-950 transition hover:text-brand-500 dark:text-white dark:hover:text-brand-400"
+              >
+                {product.title}
+              </Link>
+
+              <Link
+                href={product.productUrl}
+                className="relative mt-5 flex h-24 w-full items-center justify-center"
+              >
+                {product.imageUrl ? (
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.title}
+                    fill
+                    sizes="180px"
+                    className="object-contain transition duration-200 hover:scale-105"
+                  />
+                ) : (
+                  <span className="text-3xl font-extrabold text-gray-950 dark:text-white">
+                    {product.title.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </Link>
+
+              {product.text ? (
+                <div className="mt-6 min-h-[76px]">
+                  <p className="line-clamp-4 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                    {product.text}{" "}
+                    <button
+                      type="button"
+                      className="inline text-xs font-medium text-gray-500 underline-offset-2 hover:underline dark:text-gray-400"
+                    >
+                      Ver mas
+                    </button>
+                  </p>
+                </div>
+              ) : (
+                <div className="min-h-[76px]" />
+              )}
+
+              <Link
+                href={
+                  product.isForSale && !hasConfirmedPurchase
+                    ? "/informacion?comprar=1"
+                    : product.downloadUrl
+                }
+                className="mt-auto flex w-full items-center justify-center rounded-lg bg-brand-500 px-5 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
+              >
+                {product.isForSale && !hasConfirmedPurchase
+                  ? "Comprar"
+                  : product.fileType === "video"
+                  ? "Ver video"
+                  : "Descargar"}
+              </Link>
+            </article>
+          ))}
+        </div>
+        {filteredProducts.length === 0 ? (
+          <p className="mt-10 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+            No hay productos disponibles en esta categoria.
+          </p>
+        ) : null}
+
+        {creatorCommerceSections
+          .filter((section) => section.items.length > 0)
+          .map((section) => (
+            <div key={section.title} className="mt-16">
+              <div className="mb-8 flex justify-start">
+                <h2 className="rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white">
+                  {section.title}
+                </h2>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-6">
+                {section.items.map((item) => (
+                  <article
+                    key={item.id}
+                    className="flex min-h-[320px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950"
+                  >
+                    <Link
+                      href={item.productUrl}
+                      className="flex min-h-14 items-start justify-center text-xl font-bold leading-snug text-gray-950 transition hover:text-brand-500 dark:text-white dark:hover:text-brand-400"
+                    >
+                      {item.title}
+                    </Link>
+
+                    <Link
+                      href={item.productUrl}
+                      className="relative mt-5 flex h-24 w-full items-center justify-center"
+                    >
+                      {item.imageUrl ? (
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.title}
+                          fill
+                          sizes="180px"
+                          className="object-contain transition duration-200 hover:scale-105"
+                        />
+                      ) : (
+                        <span className="text-3xl font-extrabold text-gray-950 dark:text-white">
+                          {item.title.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </Link>
+
+                    <div className="mt-8 text-center">
+                      <p className="text-lg font-extrabold text-gray-950 dark:text-white">
+                        {item.currency} {item.price}
+                      </p>
+                    </div>
+
+                    <Link
+                      href={item.productUrl}
+                      className="mt-auto flex w-full items-center justify-center rounded-lg bg-brand-500 px-5 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
+                    >
+                      Vendedores
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ))}
+      </section>
+    </main>
+  );
+}
