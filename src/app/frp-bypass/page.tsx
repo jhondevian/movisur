@@ -25,6 +25,7 @@ const shortcuts: FrpShortcut[] = [
   { label: "File Shorts (Galaxy Store)", href: "samsungapps://ProductDetail/org.aospstudio.files", imageUrl: "https://frpbypass.cc/wp-content/uploads/2025/07/galaxy-store.webp", alt: "Galaxy Store" },
   { label: "Smart Switch (Galaxy Store)", href: "samsungapps://ProductDetail/com.sec.android.easyMover", imageUrl: "https://frpbypass.cc/wp-content/uploads/2025/07/galaxy-store.webp", alt: "Galaxy Store" },
   { label: "Chrome", href: "intent://com.android.chrome/#Intent;scheme=android-app;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2023/09/chrome.png.webp", alt: "Chrome" },
+  { label: "Cambiar navegador Xiaomi", href: "intent://#Intent;action=android.settings.MANAGE_DEFAULT_APPS_SETTINGS;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2023/09/settings.png.webp", alt: "Cambiar navegador Xiaomi" },
   { label: "Youtube", href: "intent://com.google.android.youtube/#Intent;scheme=android-app;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2023/09/youtube.webp", alt: "Youtube" },
   { label: "Google Quick Search Box", href: "intent://com.google.android.googlequicksearchbox/#Intent;scheme=android-app;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2023/09/google-search.webp", alt: "Google Search" },
   { label: "Google Help", href: "intent://com.google.android.gms/.googlehelp.helpactivities.DeviceSignalsExportActivity/#Intent;scheme=android-app;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2023/09/google-search.webp", alt: "Google Help" },
@@ -66,6 +67,7 @@ const shortcuts: FrpShortcut[] = [
   { label: "Xshare", href: "https://com.infinix.xshare/#Intent;scheme=android-app;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2023/12/xshare-mini.png.webp", alt: "Xshare" },
   { label: "Xshare Mini", href: "https://com.infinix.xshare/#Intent;scheme=android-app;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2023/12/xshare-mini.png.webp", alt: "Xshare Mini" },
   { label: "Xiaomi ShareME", href: "intent://com.xiaomi.midrop/#Intent;scheme=android-app;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2025/02/ShareME.webp", alt: "ShareME" },
+  { label: "Segundo espacio Xiaomi", href: "intent://#Intent;component=com.miui.securitycore/com.miui.securityspace.settings.SecondSpaceSettingsActivity;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2023/09/settings.png.webp", alt: "Segundo espacio Xiaomi" },
   { label: "Mi Mover", href: "intent://#Intent;package=com.miui.huanji;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2025/09/Mi-Mover.webp", alt: "Mi Mover" },
   { label: "OPPO Phone Clone", href: "https://com.coloros.backuprestore/#Intent;scheme=android-app;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2023/12/OPPO-Phone-Clone.png.webp", alt: "OPPO Phone Clone" },
   { label: "OnePlus Clone Phone", href: "https://com.coloros.backuprestore/#Intent;scheme=android-app;end", imageUrl: "https://frpbypass.cc/wp-content/uploads/2025/09/Clone-Phone-OnePlus.webp", alt: "OnePlus Clone Phone" },
@@ -130,9 +132,105 @@ const downloads: FrpDownload[] = [
   { name: "IPTV_Smarters_Pro.apk", href: "https://www.dropbox.com/scl/fi/2lqulkej63lq2bb2f78y9/IPTV_Smarters_Pro_v3.1.3.apk?rlkey=dfwfbiufwdmotc930xqxlgjhj&st=3t9hpuht&dl=1" },
 ];
 
+const shortcutGroupOrder = [
+  "general",
+  "samsung",
+  "xiaomi",
+  "motorola",
+  "vivo-infinix-tecno",
+  "oppo-oneplus-asus",
+  "google",
+  "otros",
+];
+
+function getShortcutGroup(item: FrpShortcut) {
+  const text = `${item.label} ${item.alt}`.toLowerCase();
+
+  if (
+    text.includes("samsung") ||
+    text.includes("galaxy") ||
+    text.includes("knox") ||
+    text.includes("adb") ||
+    text.includes("usb setting") ||
+    text.includes("hw module")
+  ) {
+    return "samsung";
+  }
+
+  if (
+    text.includes("xiaomi") ||
+    text.includes(" mi ") ||
+    text.includes("mi file") ||
+    text.includes("mi mover") ||
+    text.includes("shareme") ||
+    text.includes("segundo espacio")
+  ) {
+    return "xiaomi";
+  }
+
+  if (text.includes("motorola") || text.includes("moto")) {
+    return "motorola";
+  }
+
+  if (
+    text.includes("vivo") ||
+    text.includes("infinix") ||
+    text.includes("tecno") ||
+    text.includes("xshare")
+  ) {
+    return "vivo-infinix-tecno";
+  }
+
+  if (
+    text.includes("oppo") ||
+    text.includes("oneplus") ||
+    text.includes("asus")
+  ) {
+    return "oppo-oneplus-asus";
+  }
+
+  if (
+    text.includes("google") ||
+    text.includes("gmail") ||
+    text.includes("youtube") ||
+    text.includes("chrome") ||
+    text.includes("maps")
+  ) {
+    return "google";
+  }
+
+  if (
+    text.includes("dial") ||
+    text.includes("qr") ||
+    text.includes("activity manager") ||
+    text.includes("settings") ||
+    text.includes("accessibility") ||
+    text.includes("calculator") ||
+    text.includes("notification")
+  ) {
+    return "general";
+  }
+
+  return "otros";
+}
+
+function sortShortcutsByBrand(items: FrpShortcut[]) {
+  return [...items].sort((a, b) => {
+    const groupA = shortcutGroupOrder.indexOf(getShortcutGroup(a));
+    const groupB = shortcutGroupOrder.indexOf(getShortcutGroup(b));
+
+    if (groupA !== groupB) {
+      return groupA - groupB;
+    }
+
+    return a.label.localeCompare(b.label, "es");
+  });
+}
+
 export default function FrpBypassPage() {
-  const firstColumn = shortcuts.slice(0, Math.ceil(shortcuts.length / 2));
-  const secondColumn = shortcuts.slice(Math.ceil(shortcuts.length / 2));
+  const orderedShortcuts = sortShortcutsByBrand(shortcuts);
+  const firstColumn = orderedShortcuts.slice(0, Math.ceil(orderedShortcuts.length / 2));
+  const secondColumn = orderedShortcuts.slice(Math.ceil(orderedShortcuts.length / 2));
   const firstDownloadColumn = downloads.slice(0, Math.ceil(downloads.length / 2));
   const secondDownloadColumn = downloads.slice(Math.ceil(downloads.length / 2));
 
