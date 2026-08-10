@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 
 const navItems = [
   { label: "Productos", href: "/#operaciones" },
+  { label: "FRP Bypass", href: "/frp-bypass" },
   { label: "Informacion", href: "/informacion" },
 ];
 

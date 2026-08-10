@@ -376,10 +376,10 @@ export default function FrontendInfoBody() {
                   Metodos de pago disponibles
                 </h2>
                 <div
-                  className={`mt-8 grid gap-0 overflow-hidden bg-white dark:bg-white/[0.03] ${
+                  className={`mt-8 grid gap-4 bg-transparent md:gap-0 md:overflow-hidden md:bg-white md:dark:bg-white/[0.03] ${
                     (sale?.paymentMethods.length ?? 0) === 1
                       ? "mx-auto max-w-md"
-                      : (sale?.paymentMethods.length ?? 0) === 2
+                    : (sale?.paymentMethods.length ?? 0) === 2
                       ? "mx-auto max-w-3xl md:grid-cols-2"
                       : (sale?.paymentMethods.length ?? 0) === 3
                       ? "mx-auto max-w-5xl md:grid-cols-3"
@@ -390,7 +390,7 @@ export default function FrontendInfoBody() {
                     sale.paymentMethods.map((method) => (
                       <article
                         key={method.code}
-                        className="border-b border-r border-gray-200 p-6 last:border-r-0 dark:border-gray-800"
+                        className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] md:rounded-none md:border-0 md:border-b md:border-r md:p-6 md:shadow-none md:last:border-r-0"
                       >
                         <div className="flex items-center gap-3">
                           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-500 dark:bg-brand-500/10">
