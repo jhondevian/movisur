@@ -18,7 +18,7 @@ export default async function EditAdminArchivoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [file, categories] = await Promise.all([
+  const [file, categories, owners] = await Promise.all([
     prisma.movisurProductFile.findUnique({
       where: { id },
       include: {
@@ -41,6 +41,16 @@ export default async function EditAdminArchivoPage({
       select: {
         id: true,
         name: true,
+      },
+    }),
+    prisma.user.findMany({
+      orderBy: [{ role: "asc" }, { firstName: "asc" }, { lastName: "asc" }],
+      select: {
+        email: true,
+        firstName: true,
+        id: true,
+        lastName: true,
+        role: true,
       },
     }),
   ]);
@@ -67,7 +77,11 @@ export default async function EditAdminArchivoPage({
         </Link>
       </div>
 
-      <MovisurProductFileForm categories={categories} initialFile={file} />
+      <MovisurProductFileForm
+        categories={categories}
+        initialFile={file}
+        owners={owners}
+      />
 
       <div className="mt-8">
         <div className="mb-4">

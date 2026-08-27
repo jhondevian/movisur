@@ -20,11 +20,19 @@ type ProductFileFormData = Pick<
   | "isActive"
   | "isForSale"
   | "sortOrder"
+  | "createdById"
 >;
 
 type MovisurProductFileFormProps = {
   categories: Pick<MovisurBrandCategory, "id" | "name">[];
   initialFile?: ProductFileFormData;
+  owners?: {
+    email: string;
+    firstName: string;
+    id: string;
+    lastName: string;
+    role: string;
+  }[];
   returnPath?: string;
 };
 
@@ -63,6 +71,7 @@ const distributionOptions: {
 export default function MovisurProductFileForm({
   categories,
   initialFile,
+  owners = [],
   returnPath = "/admin/archivos",
 }: MovisurProductFileFormProps) {
   const router = useRouter();
@@ -186,6 +195,30 @@ export default function MovisurProductFileForm({
           </select>
         </label>
       </div>
+
+      {owners.length > 0 ? (
+        <label className="mt-5 block">
+          <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Propietario
+          </span>
+          <select
+            name="createdById"
+            defaultValue={initialFile?.createdById ?? ""}
+            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          >
+            <option value="">Sin propietario</option>
+            {owners.map((owner) => (
+              <option key={owner.id} value={owner.id}>
+                {`${owner.firstName} ${owner.lastName}`.trim()} - {owner.email} -{" "}
+                {owner.role}
+              </option>
+            ))}
+          </select>
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Solo los administradores pueden cambiar el propietario del archivo.
+          </p>
+        </label>
+      ) : null}
 
       <label className="mt-5 block">
         <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">

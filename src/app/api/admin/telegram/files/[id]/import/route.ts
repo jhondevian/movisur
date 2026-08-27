@@ -1,5 +1,5 @@
 import { requireAdminUser } from "@/lib/admin-auth";
-import { importTelegramFileToMovisur } from "@/lib/telegram-import";
+import { importTelegramFileToMovisurWithOwner } from "@/lib/telegram-import";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -17,7 +17,7 @@ export async function POST(
   const { id } = await context.params;
 
   try {
-    const result = await importTelegramFileToMovisur(id);
+    const result = await importTelegramFileToMovisurWithOwner(id, admin.id);
 
     return NextResponse.json(result);
   } catch (error) {

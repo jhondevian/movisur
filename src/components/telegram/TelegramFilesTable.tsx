@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type TelegramFileRow = {
   caption: string | null;
@@ -46,6 +46,26 @@ export default function TelegramFilesTable({ files }: TelegramFilesTableProps) {
   const router = useRouter();
   const [importingId, setImportingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const filteredFiles = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return files;
+
+    return files.filter((file) =>
+      [
+        file.fileName || "",
+        file.caption || "",
+        file.fileMimeType || "",
+        file.fileKind,
+        file.chatTitle || "",
+        file.chatId,
+        file.status,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [files, searchTerm]);
 
   async function importFile(id: string) {
     setMessage("");
@@ -76,6 +96,23 @@ export default function TelegramFilesTable({ files }: TelegramFilesTableProps) {
           {message}
         </div>
       ) : null}
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {filteredFiles.length} de {files.length} archivos
+          </p>
+        </div>
+        <label className="block w-full sm:max-w-sm">
+          <span className="sr-only">Buscar archivos de Telegram</span>
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Buscar en Telegram..."
+            className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          />
+        </label>
+      </div>
       <div className="max-w-full overflow-hidden">
         <table className="w-full table-fixed text-left">
           <thead>
@@ -88,7 +125,7 @@ export default function TelegramFilesTable({ files }: TelegramFilesTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-            {files.map((file) => (
+            {filteredFiles.map((file) => (
               <tr key={file.id}>
                 <td className="px-3 py-4">
                   <p className="truncate font-semibold text-gray-900 dark:text-white">
@@ -129,17 +166,21 @@ export default function TelegramFilesTable({ files }: TelegramFilesTableProps) {
                 </td>
               </tr>
             ))}
-            {files.length === 0 ? (
+            {filteredFiles.length === 0 ? (
               <tr>
                 <td colSpan={tableHeaders.length} className="px-3 py-16">
                   <div className="mx-auto max-w-xl text-center">
                     <p className="text-base font-semibold text-gray-900 dark:text-white">
-                      Aun no hay archivos de Telegram
+                      {files.length === 0
+                        ? "Aun no hay archivos de Telegram"
+                        : "No hay archivos que coincidan con la busqueda"}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
-                      Configura el bot, agregalo a tu canal o grupo, y los
-                      documentos, ZIPs o videos recibidos apareceran aqui.
-                    </p>
+                    {files.length === 0 ? (
+                      <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                        Configura el bot, agregalo a tu canal o grupo, y los
+                        documentos, ZIPs o videos recibidos apareceran aqui.
+                      </p>
+                    ) : null}
                   </div>
                 </td>
               </tr>

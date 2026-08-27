@@ -1,6 +1,9 @@
+"use client";
+
 import Badge from "@/components/ui/badge/Badge";
 import type { MovisurProductFile } from "@/generated/prisma/client";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 type ProductFileWithCategory = MovisurProductFile & {
   category: { name: string } | null;
@@ -35,6 +38,7 @@ export default function MovisurProductFilesTable({
   editBasePath = "/admin/archivos",
   showOwner = false,
 }: MovisurProductFilesTableProps) {
+  const [searchTerm, setSearchTerm] = useState("");
   const headers = [
     { label: "Producto", className: "w-[28%]" },
     { label: "Imagen", className: "hidden w-[8%] sm:table-cell" },
@@ -49,9 +53,46 @@ export default function MovisurProductFilesTable({
     { label: "Estado", className: "w-[10%]" },
     { label: "Acciones", className: "w-[12%] text-right" },
   ];
+  const filteredFiles = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return files;
+
+    return files.filter((file) =>
+      [
+        file.name,
+        file.description || "",
+        file.category?.name || "",
+        file.creator
+          ? `${file.creator.firstName} ${file.creator.lastName} ${file.creator.email} ${file.creator.role}`
+          : "sin propietario archivo anterior",
+        file.fileType,
+        file.distribution,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [files, searchTerm]);
 
   return (
     <div className="overflow-hidden">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {filteredFiles.length} de {files.length} archivos
+          </p>
+        </div>
+        <label className="block w-full sm:max-w-sm">
+          <span className="sr-only">Buscar archivos</span>
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Buscar archivos..."
+            className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          />
+        </label>
+      </div>
       <div className="max-w-full overflow-hidden">
         <table className="w-full table-fixed text-left">
           <thead>
@@ -67,7 +108,7 @@ export default function MovisurProductFilesTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-            {files.map((file) => (
+            {filteredFiles.map((file) => (
               <tr key={file.id}>
                 <td className="px-2 py-4 sm:px-3">
                   <p className="truncate font-semibold text-gray-900 dark:text-white">
@@ -139,6 +180,15 @@ export default function MovisurProductFilesTable({
                 </td>
               </tr>
             ))}
+            {filteredFiles.length === 0 ? (
+              <tr>
+                <td colSpan={headers.length} className="px-3 py-14">
+                  <p className="text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                    No hay archivos que coincidan con la busqueda.
+                  </p>
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>

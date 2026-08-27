@@ -120,6 +120,7 @@ export async function PATCH(
   const categoryId = getString(formData, "categoryId");
   const description = getString(formData, "description");
   const downloadUrl = getString(formData, "downloadUrl");
+  const createdById = getString(formData, "createdById");
   const fileType = normalizeFileType(getString(formData, "fileType"));
   const file = formData.get("file");
   const image = formData.get("image");
@@ -180,6 +181,20 @@ export async function PATCH(
     );
   }
 
+  if (createdById && user.role === "admin") {
+    const owner = await prisma.user.findUnique({
+      where: { id: createdById },
+      select: { id: true },
+    });
+
+    if (!owner) {
+      return NextResponse.json(
+        { message: "El propietario seleccionado no existe." },
+        { status: 400 }
+      );
+    }
+  }
+
   try {
     const updated = await prisma.$transaction(async (tx) => {
       if (shouldCreateRevision) {
@@ -226,6 +241,7 @@ export async function PATCH(
           isActive,
           isForSale,
           sortOrder,
+          ...(user.role === "admin" ? { createdById: createdById || null } : {}),
         },
       });
     });

@@ -93,6 +93,23 @@ async function downloadTelegramFile({
 }
 
 export async function importTelegramFileToMovisur(telegramFileId: string) {
+  return importTelegramFileToMovisurWithOwner(telegramFileId);
+}
+
+async function getDefaultAdminOwnerId() {
+  const admin = await prisma.user.findFirst({
+    where: { role: "admin" },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+
+  return admin?.id ?? null;
+}
+
+export async function importTelegramFileToMovisurWithOwner(
+  telegramFileId: string,
+  ownerId?: string | null
+) {
   const telegramFile = await prisma.telegramFile.findUnique({
     where: { id: telegramFileId },
   });
@@ -116,6 +133,7 @@ export async function importTelegramFileToMovisur(telegramFileId: string) {
   const slug = await getUniqueSlug(name);
   const fileType = getFileType(telegramFile.fileKind, telegramFile.fileName);
   const fileSize = telegramFile.fileSize ?? downloaded.fileSize;
+  const createdById = ownerId ?? (await getDefaultAdminOwnerId());
 
   const created = await prisma.$transaction(async (tx) => {
     const productFile = await tx.movisurProductFile.create({
@@ -127,6 +145,7 @@ export async function importTelegramFileToMovisur(telegramFileId: string) {
         fileName: telegramFile.fileName || downloaded.storedName,
         fileSize,
         fileType,
+        createdById,
         isActive: true,
         isForSale: false,
         name,
@@ -143,6 +162,7 @@ export async function importTelegramFileToMovisur(telegramFileId: string) {
         fileName: telegramFile.fileName || downloaded.storedName,
         fileSize,
         fileType,
+        createdById,
         isCurrent: true,
         productFileId: productFile.id,
         versionNumber: 1,
