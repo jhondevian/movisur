@@ -42,19 +42,21 @@ type CreatorCommerceSection = {
 };
 
 type FrontendBodyProps = {
-  categories: FrontendCategory[];
+  brandCategories: FrontendCategory[];
   creatorCommerceSections: CreatorCommerceSection[];
   downloadRetryAfter?: string;
   downloadStatus?: string;
+  fileCategories: FrontendCategory[];
   hasConfirmedPurchase: boolean;
   productFiles: FrontendProductFile[];
 };
 
 export default function FrontendBody({
-  categories,
+  brandCategories,
   creatorCommerceSections,
   downloadRetryAfter,
   downloadStatus,
+  fileCategories,
   hasConfirmedPurchase,
   productFiles,
 }: FrontendBodyProps) {
@@ -92,12 +94,12 @@ export default function FrontendBody({
         .includes(normalizedSearch)
     );
   }, [frontendProducts, searchTerm, selectedCategoryId]);
-  const availableCategories = categories.map((category) => ({
+  const availableCategories = fileCategories.map((category) => ({
     id: category.id,
     name: category.name,
     imageUrl: category.imageUrl,
   }));
-  const heroCategories = availableCategories.slice(0, 6);
+  const heroCategories = brandCategories.slice(0, 6);
   const downloadMessage =
     downloadStatus === "empty"
       ? "Aún no hay una versión pública de Movisur Tool disponible. El admin debe subir y activar el archivo."

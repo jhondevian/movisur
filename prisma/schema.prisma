@@ -200,12 +200,14 @@ model MovisurBrandCategory {
   code        String   @unique @db.VarChar(40)
   description String?
   imageUrl    String?  @map("image_url") @db.VarChar(255)
+  categoryType String  @default("brand") @map("category_type") @db.VarChar(40)
   isActive    Boolean  @default(true) @map("is_active")
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   productFiles MovisurProductFile[]
 
+  @@index([categoryType, isActive, sortOrder], map: "movisur_brand_categories_type_public_idx")
   @@index([isActive, sortOrder], map: "movisur_brand_categories_public_idx")
   @@map("movisur_brand_categories")
 }

@@ -9,6 +9,11 @@ type MovisurBrandCategoriesFormProps = {
   categories: MovisurBrandCategory[];
 };
 
+const categoryTypeOptions = [
+  { label: "Marca", value: "brand" },
+  { label: "Tool", value: "tool" },
+];
+
 export default function MovisurBrandCategoriesForm({
   categories,
 }: MovisurBrandCategoriesFormProps) {
@@ -96,8 +101,8 @@ export default function MovisurBrandCategoriesForm({
         Categorias de marcas
       </h2>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Crea marcas como Samsung, LG o Xiaomi. Las activas aparecen como
-        productos en el frontend.
+        Crea marcas como Samsung, LG o Xiaomi, o categorias internas para tools
+        y archivos.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -111,6 +116,23 @@ export default function MovisurBrandCategoriesForm({
             placeholder="Samsung"
             className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
           />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Tipo
+          </span>
+          <select
+            name="categoryType"
+            defaultValue="brand"
+            className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+          >
+            {categoryTypeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="block">
@@ -228,7 +250,23 @@ export default function MovisurBrandCategoriesForm({
                   />
                 </label>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+                      Tipo
+                    </span>
+                    <select
+                      name="categoryType"
+                      defaultValue={category.categoryType}
+                      className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+                    >
+                      {categoryTypeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
                       Orden
@@ -303,6 +341,9 @@ export default function MovisurBrandCategoriesForm({
                     <h3 className="font-semibold text-gray-900 dark:text-white">
                       {category.name}
                     </h3>
+                    <span className="mt-1 inline-flex rounded-full bg-white px-2 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-950 dark:text-gray-400">
+                      {category.categoryType === "tool" ? "Tool" : "Marca"}
+                    </span>
                     <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
                       {category.description || "Sin descripcion."}
                     </p>

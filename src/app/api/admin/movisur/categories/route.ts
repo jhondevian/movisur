@@ -7,6 +7,7 @@ import path from "path";
 export const runtime = "nodejs";
 
 const allowedTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+const allowedCategoryTypes = new Set(["brand", "tool"]);
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
 
   const formData = await request.formData();
   const name = getString(formData, "name");
+  const categoryType = getString(formData, "categoryType");
   const description = getString(formData, "description");
   const sortOrder = Number(getString(formData, "sortOrder") || 0);
   const isActive = formData.get("isActive") === "on";
@@ -92,6 +94,9 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         code,
+        categoryType: allowedCategoryTypes.has(categoryType)
+          ? categoryType
+          : "brand",
         description,
         imageUrl,
         isActive,

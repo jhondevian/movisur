@@ -33,9 +33,9 @@ export default async function Home({ searchParams }: HomeProps) {
     OR: [{ assignedToId: null }, { assignedExpiresAt: { lt: new Date() } }],
   };
 
-  const [categories, productFiles, licenseProducts, rentalTools] = await Promise.all([
+  const [brandCategories, productFiles, licenseProducts, rentalTools] = await Promise.all([
     prisma.movisurBrandCategory.findMany({
-      where: { isActive: true },
+      where: { isActive: true, categoryType: "brand" },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       select: {
         id: true,
@@ -125,6 +125,26 @@ export default async function Home({ searchParams }: HomeProps) {
       },
     }),
   ]);
+  const fileCategoryIds = new Set(
+    productFiles
+      .map((file) => file.categoryId)
+      .filter((categoryId): categoryId is string => Boolean(categoryId))
+  );
+  const fileCategories =
+    fileCategoryIds.size > 0
+      ? await prisma.movisurBrandCategory.findMany({
+          where: {
+            id: { in: [...fileCategoryIds] },
+            isActive: true,
+          },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+          },
+        })
+      : [];
   const confirmedPurchase = userId
     ? await prisma.adminNotification.findFirst({
         where: {
@@ -150,7 +170,7 @@ export default async function Home({ searchParams }: HomeProps) {
     <>
       <FrontendHeader />
       <FrontendBody
-        categories={categories}
+        brandCategories={brandCategories}
         creatorCommerceSections={[
           {
             title: "Licencias",
@@ -177,6 +197,7 @@ export default async function Home({ searchParams }: HomeProps) {
             })),
           },
         ]}
+        fileCategories={fileCategories}
         hasConfirmedPurchase={Boolean(confirmedPurchase)}
         productFiles={productFiles}
         downloadStatus={params?.download}
