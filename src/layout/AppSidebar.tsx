@@ -34,8 +34,12 @@ const adminNavItems: NavItem[] = [
     subItems: [
       { name: "Versiones", path: "/admin/movisur", pro: false },
       { name: "Venta", path: "/admin/movisur/venta", pro: false },
-      { name: "Configuracion", path: "/admin/movisur/configuracion", pro: false },
     ],
+  },
+  {
+    icon: <ListIcon />,
+    name: "Configuracion",
+    path: "/admin/movisur/configuracion",
   },
   {
     icon: <TableIcon />,
