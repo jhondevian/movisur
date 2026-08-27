@@ -26,6 +26,8 @@ const globalForPrisma = globalThis as unknown as {
     creatorRentalAccount?: unknown;
     creatorAccessRequest?: unknown;
     adminNotification?: unknown;
+    telegramSettings?: unknown;
+    telegramFile?: unknown;
   };
   prismaSchemaVersion?: string;
 };
@@ -35,7 +37,7 @@ const pool = new pg.Pool({
 });
 const adapter = new PrismaPg(pool);
 
-const prismaSchemaVersion = "creator-access-profile-v1";
+const prismaSchemaVersion = "telegram-import-v1";
 const cachedPrisma = globalForPrisma.prisma;
 const shouldReuseCachedPrisma =
   cachedPrisma &&
@@ -61,6 +63,8 @@ const shouldReuseCachedPrisma =
   "creatorRentalAccount" in cachedPrisma &&
   "creatorAccessRequest" in cachedPrisma &&
   "adminNotification" in cachedPrisma &&
+  "telegramSettings" in cachedPrisma &&
+  "telegramFile" in cachedPrisma &&
   globalForPrisma.prismaSchemaVersion === prismaSchemaVersion;
 
 export const prisma =

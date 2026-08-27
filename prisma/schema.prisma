@@ -495,3 +495,43 @@ model AdminNotification {
   @@index([recipientUserId, isRead, createdAt], map: "admin_notifications_recipient_idx")
   @@map("admin_notifications")
 }
+
+model TelegramSettings {
+  id                    String    @id @default("default")
+  botUsername           String?   @map("bot_username") @db.VarChar(120)
+  botTokenEncrypted     String?   @map("bot_token_encrypted")
+  webhookSecret         String?   @map("webhook_secret") @db.VarChar(160)
+  allowedChatIds        String?   @map("allowed_chat_ids")
+  autoImport            Boolean   @default(false) @map("auto_import")
+  lastWebhookSetAt      DateTime? @map("last_webhook_set_at") @db.Timestamptz(6)
+  lastConnectionCheckAt DateTime? @map("last_connection_check_at") @db.Timestamptz(6)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("telegram_settings")
+}
+
+model TelegramFile {
+  id             String    @id @default(uuid()) @db.Uuid
+  chatId         String    @map("chat_id") @db.VarChar(80)
+  chatTitle      String?   @map("chat_title") @db.VarChar(180)
+  messageId      Int       @map("message_id")
+  fileId         String    @map("file_id")
+  fileUniqueId   String    @map("file_unique_id") @db.VarChar(180)
+  fileName       String?   @map("file_name") @db.VarChar(255)
+  fileMimeType   String?   @map("file_mime_type") @db.VarChar(120)
+  fileSize       Int?      @map("file_size")
+  fileKind       String    @default("document") @map("file_kind") @db.VarChar(40)
+  caption        String?
+  status         String    @default("pending") @db.VarChar(40)
+  importedFileId String?   @map("imported_file_id") @db.Uuid
+  receivedAt     DateTime  @default(now()) @map("received_at") @db.Timestamptz(6)
+  importedAt     DateTime? @map("imported_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([chatId, messageId, fileUniqueId], map: "telegram_files_message_file_key")
+  @@index([status, receivedAt], map: "telegram_files_status_idx")
+  @@index([chatId, receivedAt], map: "telegram_files_chat_idx")
+  @@map("telegram_files")
+}

@@ -61,6 +61,14 @@ const adminNavItems: NavItem[] = [
     path: "/admin/archivos",
   },
   {
+    icon: <TableIcon />,
+    name: "Telegram",
+    subItems: [
+      { name: "Archivos", path: "/admin/telegram", pro: false },
+      { name: "Configurar", path: "/admin/telegram/configurar", pro: false },
+    ],
+  },
+  {
     icon: <UserCircleIcon />,
     name: "Perfil",
     path: "/admin/profile",
