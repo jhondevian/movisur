@@ -3,6 +3,11 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+type IcloudServiceOption = {
+  id: string;
+  name: string;
+};
+
 type IcloudCheckSettingsFormProps = {
   apiBaseUrl: string;
   apiKeyMasked: string;
@@ -29,6 +34,9 @@ export default function IcloudCheckSettingsForm({
   });
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingServices, setIsLoadingServices] = useState(false);
+  const [services, setServices] = useState<IcloudServiceOption[]>([]);
+  const [rawServices, setRawServices] = useState("");
 
   function updateField(key: keyof typeof form, value: string | boolean) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -58,6 +66,101 @@ export default function IcloudCheckSettingsForm({
     setForm((current) => ({ ...current, apiKey: "" }));
     setMessage(payload?.message ?? "iCloud Check actualizado.");
     router.refresh();
+  }
+
+  function collectServices(value: unknown): IcloudServiceOption[] {
+    if (Array.isArray(value)) {
+      return value.flatMap((item) => collectServices(item));
+    }
+
+    if (!value || typeof value !== "object") {
+      return [];
+    }
+
+    const record = value as Record<string, unknown>;
+    const idValue =
+      record.id || record.service || record.service_id || record.serviceId;
+    const nameValue =
+      record.name || record.service_name || record.serviceName || record.title;
+
+    if (
+      (typeof idValue === "string" || typeof idValue === "number") &&
+      typeof nameValue === "string"
+    ) {
+      return [{ id: String(idValue), name: nameValue }];
+    }
+
+    return Object.values(record).flatMap((item) => collectServices(item));
+  }
+
+  function collectServicesFromHtml(value: string): IcloudServiceOption[] {
+    const options = [...value.matchAll(/value=["']?(\d+)["']?[^>]*>([^<]+)/gi)]
+      .map((match) => ({
+        id: match[1],
+        name: match[2].replace(/\s+/g, " ").trim(),
+      }))
+      .filter((item) => item.id && item.name);
+
+    if (options.length > 0) return options;
+
+    return [...value.matchAll(/\b(\d{2,})\b\s*[-:]\s*([^\n\r<]+)/g)]
+      .map((match) => ({
+        id: match[1],
+        name: match[2].replace(/\s+/g, " ").trim(),
+      }))
+      .filter((item) => item.id && item.name);
+  }
+
+  async function loadServices() {
+    setMessage("");
+    setRawServices("");
+    setServices([]);
+    setIsLoadingServices(true);
+
+    const response = await fetch("/api/admin/icloud-check/services", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        apiBaseUrl: form.apiBaseUrl,
+        apiKey: form.apiKey,
+      }),
+    });
+    const payload = (await response.json().catch(() => null)) as {
+      message?: string;
+      services?: unknown;
+    } | null;
+
+    setIsLoadingServices(false);
+
+    if (!response.ok) {
+      setMessage(payload?.message ?? "No se pudo cargar servicios.");
+      return;
+    }
+
+    const result = payload?.services;
+    const responseValue =
+      result &&
+      typeof result === "object" &&
+      !Array.isArray(result) &&
+      "response" in result
+        ? (result as { response?: unknown }).response
+        : result;
+    const parsedServices =
+      typeof responseValue === "string"
+        ? collectServicesFromHtml(responseValue)
+        : collectServices(responseValue);
+
+    setServices(parsedServices);
+    setRawServices(
+      typeof responseValue === "string"
+        ? responseValue
+        : JSON.stringify(responseValue, null, 2)
+    );
+    setMessage(
+      parsedServices.length > 0
+        ? "Servicios cargados. Selecciona el ID correcto."
+        : "Servicios cargados. Revisa la respuesta y copia el ID del servicio."
+    );
   }
 
   return (
@@ -90,17 +193,27 @@ export default function IcloudCheckSettingsForm({
           </p>
         </label>
 
-        <label className="block">
+        <div className="block">
           <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Service ID
           </span>
-          <input
-            value={form.serviceId}
-            onChange={(event) => updateField("serviceId", event.target.value)}
-            placeholder="Ejemplo: 1000"
-            className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
-          />
-        </label>
+          <div className="flex gap-3">
+            <input
+              value={form.serviceId}
+              onChange={(event) => updateField("serviceId", event.target.value)}
+              placeholder="Ejemplo: 1000"
+              className="h-11 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+            />
+            <button
+              type="button"
+              onClick={loadServices}
+              disabled={isLoadingServices}
+              className="h-11 shrink-0 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+            >
+              {isLoadingServices ? "Cargando..." : "Cargar servicios"}
+            </button>
+          </div>
+        </div>
 
         <label className="block lg:col-span-2">
           <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -127,6 +240,42 @@ export default function IcloudCheckSettingsForm({
           </span>
         </label>
       </div>
+
+      {services.length > 0 ? (
+        <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+          <p className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+            Servicios disponibles
+          </p>
+          <div className="grid max-h-72 gap-2 overflow-auto">
+            {services.map((service) => (
+              <button
+                key={`${service.id}-${service.name}`}
+                type="button"
+                onClick={() => updateField("serviceId", service.id)}
+                className={`rounded-lg border px-4 py-3 text-left text-sm transition ${
+                  form.serviceId === service.id
+                    ? "border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/10"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300"
+                }`}
+              >
+                <span className="font-semibold">{service.id}</span>
+                <span className="ml-2">{service.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {rawServices && services.length === 0 ? (
+        <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+          <p className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+            Respuesta de servicios
+          </p>
+          <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-lg bg-white p-4 text-xs leading-5 text-gray-700 dark:bg-gray-950 dark:text-gray-300">
+            {rawServices}
+          </pre>
+        </div>
+      ) : null}
 
       <div className="mt-6 rounded-xl bg-gray-50 p-4 text-sm text-gray-600 dark:bg-gray-900 dark:text-gray-300">
         Ultima actualizacion:{" "}

@@ -73,6 +73,53 @@ export function normalizeIcloudIdentifier(value: string) {
   return value.trim().toUpperCase().replace(/\s+/g, "");
 }
 
+function parseIcloudResponse(text: string) {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return text;
+  }
+}
+
+export async function fetchIcloudServiceList({
+  apiBaseUrl,
+  apiKey,
+}: {
+  apiBaseUrl?: string;
+  apiKey: string;
+}) {
+  const response = await fetch(apiBaseUrl || defaultApiBaseUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      accountinfo: "servicelist",
+      key: apiKey,
+    }),
+    cache: "no-store",
+  });
+  const parsed = parseIcloudResponse(await response.text());
+
+  if (!response.ok) {
+    throw new Error(`iFreeiCloud respondio con estado ${response.status}.`);
+  }
+
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    !Array.isArray(parsed) &&
+    "success" in parsed &&
+    parsed.success === false
+  ) {
+    throw new Error(
+      "error" in parsed && typeof parsed.error === "string"
+        ? parsed.error
+        : "No se pudo cargar la lista de servicios."
+    );
+  }
+
+  return parsed;
+}
+
 export async function runIcloudCheck(identifier: string) {
   const settings = await getIcloudCheckSettings();
   const apiKey = await getIcloudApiKey();
@@ -101,14 +148,7 @@ export async function runIcloudCheck(identifier: string) {
     }),
     cache: "no-store",
   });
-  const text = await response.text();
-  let parsed: unknown = text;
-
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    parsed = text;
-  }
+  const parsed = parseIcloudResponse(await response.text());
 
   await prisma.icloudCheckLookup.create({
     data: {
