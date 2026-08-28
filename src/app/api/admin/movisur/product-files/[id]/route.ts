@@ -147,6 +147,7 @@ export async function PATCH(
   let fileMimeType = currentFile.fileMimeType;
   let imageUrl = currentFile.imageUrl;
   let distribution = currentFile.distribution;
+  let finalFileType = currentFile.fileType;
   let shouldCreateRevision = false;
 
   try {
@@ -161,17 +162,22 @@ export async function PATCH(
       fileSize = savedFile.fileSize;
       fileMimeType = savedFile.fileMimeType;
       distribution = savedFile.distribution;
+      finalFileType = fileType;
       shouldCreateRevision = true;
     } else if (downloadUrl) {
+      const isTelegramReference = downloadUrl.startsWith("telegram:");
+      const resolvedFileType = isTelegramReference ? currentFile.fileType : fileType;
+
       shouldCreateRevision =
         downloadUrl !== currentFile.downloadUrl ||
-        fileType !== currentFile.fileType ||
+        resolvedFileType !== currentFile.fileType ||
         currentFile.distribution !== "url";
       finalDownloadUrl = downloadUrl;
-      fileName = null;
-      fileSize = null;
-      fileMimeType = null;
+      fileName = isTelegramReference ? currentFile.fileName : null;
+      fileSize = isTelegramReference ? currentFile.fileSize : null;
+      fileMimeType = isTelegramReference ? currentFile.fileMimeType : null;
       distribution = "url";
+      finalFileType = resolvedFileType;
     }
   } catch (error) {
     return NextResponse.json(
@@ -221,7 +227,7 @@ export async function PATCH(
             versionNumber: (latestRevision?.versionNumber ?? 0) + 1,
             distribution,
             downloadUrl: finalDownloadUrl,
-            fileType,
+            fileType: finalFileType,
             fileMimeType,
             fileName,
             fileSize,
@@ -241,7 +247,7 @@ export async function PATCH(
           imageUrl,
           distribution,
           downloadUrl: finalDownloadUrl,
-          fileType: shouldCreateRevision ? fileType : currentFile.fileType,
+          fileType: finalFileType,
           fileMimeType,
           fileName,
           fileSize,

@@ -1,3 +1,8 @@
+import { createReadStream } from "fs";
+import { stat } from "fs/promises";
+import path from "path";
+import { Readable } from "stream";
+
 type TelegramApiResponse<T> = {
   ok: boolean;
   result?: T;
@@ -5,6 +10,7 @@ type TelegramApiResponse<T> = {
 };
 
 const defaultTelegramApiBaseUrl = "https://api.telegram.org";
+const defaultTelegramLocalFileRoot = "/var/lib/telegram-bot-api";
 
 function getTelegramApiBaseUrl() {
   return (
@@ -105,7 +111,34 @@ export async function getTemporaryTelegramDownloadUrl(
 }
 
 export async function fetchTemporaryTelegramFile(token: string, fileId: string) {
-  const downloadUrl = await getTemporaryTelegramDownloadUrl(token, fileId);
+  const fileInfo = await getTelegramFileInfo(token, fileId);
+
+  if (!fileInfo.file_path) {
+    throw new Error("Telegram no entrego una ruta de descarga para este archivo.");
+  }
+
+  if (path.isAbsolute(fileInfo.file_path)) {
+    const localRoot = path.resolve(
+      process.env.TELEGRAM_LOCAL_FILE_ROOT?.trim() || defaultTelegramLocalFileRoot
+    );
+    const filePath = path.resolve(fileInfo.file_path);
+
+    if (!filePath.startsWith(`${localRoot}${path.sep}`)) {
+      throw new Error("Telegram entrego una ruta local no permitida.");
+    }
+
+    const fileStat = await stat(filePath);
+    const body = Readable.toWeb(createReadStream(filePath));
+
+    return new Response(body as BodyInit, {
+      headers: {
+        "Content-Length": String(fileStat.size),
+        "Content-Type": "application/octet-stream",
+      },
+    });
+  }
+
+  const downloadUrl = getTelegramFileDownloadUrl(token, fileInfo.file_path);
   const response = await fetch(downloadUrl, { cache: "no-store" });
 
   if (!response.ok || !response.body) {
