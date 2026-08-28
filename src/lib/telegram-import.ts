@@ -101,11 +101,26 @@ async function getTelegramDownloadReference({
   fileId,
   fileName,
   largeFileThresholdMb,
+  knownFileSize,
 }: {
   fileId: string;
   fileName: string | null;
   largeFileThresholdMb: number;
+  knownFileSize?: bigint | null;
 }) {
+  const thresholdBytes = BigInt(largeFileThresholdMb) * BigInt(bytesPerMb);
+
+  if (knownFileSize !== null && knownFileSize !== undefined) {
+    if (knownFileSize > thresholdBytes) {
+      return {
+        distribution: "url" as const,
+        downloadUrl: `telegram:${fileId}`,
+        fileSize: knownFileSize,
+        storedName: fileName,
+      };
+    }
+  }
+
   const token = await getTelegramBotToken();
 
   if (!token) {
@@ -113,16 +128,16 @@ async function getTelegramDownloadReference({
   }
 
   const fileInfo = await getTelegramFileInfo(token, fileId);
-  const thresholdBytes = largeFileThresholdMb * bytesPerMb;
+  const resolvedFileSize =
+    fileInfo.file_size === undefined ? null : BigInt(fileInfo.file_size);
   const isLargeFile =
-    typeof fileInfo.file_size === "number" && fileInfo.file_size > thresholdBytes;
+    resolvedFileSize !== null && resolvedFileSize > thresholdBytes;
 
   if (isLargeFile) {
     return {
       distribution: "url" as const,
       downloadUrl: `telegram:${fileId}`,
-      fileSize:
-        fileInfo.file_size === undefined ? null : BigInt(fileInfo.file_size),
+      fileSize: resolvedFileSize,
       storedName: fileName,
     };
   }
@@ -167,6 +182,7 @@ export async function importTelegramFileToMovisurWithOwner(
   const downloaded = await getTelegramDownloadReference({
     fileId: telegramFile.fileId,
     fileName: telegramFile.fileName,
+    knownFileSize: telegramFile.fileSize,
     largeFileThresholdMb:
       settings?.largeFileThresholdMb ?? defaultLargeFileThresholdMb,
   });
