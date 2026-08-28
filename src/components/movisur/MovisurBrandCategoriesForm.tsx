@@ -450,12 +450,12 @@ export default function MovisurBrandCategoriesForm({
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4 grid gap-3 border-t border-gray-200 pt-4 dark:border-gray-800">
                   <span className="text-xs text-gray-400">
                     Orden {category.sortOrder}
                   </span>
-                  <div className="flex flex-wrap justify-end gap-3">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <label className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 dark:bg-gray-950 dark:text-gray-300">
                       <input
                         type="checkbox"
                         checked={category.showOnHome}
@@ -466,7 +466,7 @@ export default function MovisurBrandCategoriesForm({
                       />
                       Portada
                     </label>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 dark:bg-gray-950 dark:text-gray-300">
                       <input
                         type="checkbox"
                         checked={category.showInFrontend}
@@ -480,7 +480,7 @@ export default function MovisurBrandCategoriesForm({
                       />
                       Frontend
                     </label>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 dark:bg-gray-950 dark:text-gray-300">
                       <input
                         type="checkbox"
                         checked={category.isActive}
@@ -512,11 +512,11 @@ export default function MovisurBrandCategoriesForm({
                       }
                       className="mt-3 grid gap-2"
                     >
-                      <div className="grid gap-2 sm:grid-cols-[1fr_90px]">
+                      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_90px]">
                         <input
                           name="name"
                           placeholder="Modelo"
-                          className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+                          className="h-9 min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
                         />
                         <input
                           name="year"
@@ -524,23 +524,23 @@ export default function MovisurBrandCategoriesForm({
                           min="2000"
                           max="2100"
                           placeholder="Año"
-                          className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+                          className="h-9 min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
                         />
                       </div>
-                      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                         <input
                           name="code"
                           placeholder="Codigo"
-                          className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+                          className="h-9 min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
                         />
                         <input
                           name="details"
                           placeholder="Detalles"
-                          className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+                          className="h-9 min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
                         />
                         <button
                           type="submit"
-                          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+                          className="sm:col-span-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
                         >
                           Agregar
                         </button>

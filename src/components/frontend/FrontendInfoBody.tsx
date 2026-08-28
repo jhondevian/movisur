@@ -259,7 +259,72 @@ export default function FrontendInfoBody() {
               </div>
             )}
 
-            <div className="overflow-hidden bg-white dark:bg-white/[0.03]">
+            <div className="grid gap-5 md:hidden">
+              {visiblePlans.map((plan) => (
+                <article
+                  key={`${plan.id}-mobile`}
+                  className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-950 dark:text-white">
+                        {plan.name}
+                      </h3>
+                      <p className="mt-1 text-sm font-medium text-gray-500">
+                        {plan.durationMonths} mes(es)
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-2xl font-extrabold text-gray-950 dark:text-white">
+                      {sale?.settings.currency} {plan.price}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 grid gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleAddPlan(plan)}
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                    >
+                      Agregar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDirectBuy(plan)}
+                      className="rounded-lg bg-brand-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
+                    >
+                      Comprar
+                    </button>
+                  </div>
+
+                  <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-800">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Caracteristicas
+                    </p>
+                    <ul className="mt-3 grid gap-2">
+                      {comparisonItems.map((item) => (
+                        <li
+                          key={`${plan.id}-mobile-${item}`}
+                          className="flex items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300"
+                        >
+                          <span>{item}</span>
+                          <span
+                            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                              plan.includedItems.includes(item)
+                                ? "bg-success-500 text-white"
+                                : "bg-gray-100 text-gray-400 dark:bg-gray-900"
+                            }`}
+                          >
+                            {plan.includedItems.includes(item) ? "✓" : "-"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden overflow-hidden bg-white dark:bg-white/[0.03] md:block">
               <div className="overflow-x-auto">
                 <div
                   className={`grid min-w-[860px] ${
