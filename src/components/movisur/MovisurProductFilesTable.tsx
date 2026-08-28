@@ -3,6 +3,7 @@
 import Badge from "@/components/ui/badge/Badge";
 import type { MovisurProductFile } from "@/generated/prisma/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 type ProductFileWithCategory = MovisurProductFile & {
@@ -38,7 +39,10 @@ export default function MovisurProductFilesTable({
   editBasePath = "/admin/archivos",
   showOwner = false,
 }: MovisurProductFilesTableProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
   const headers = [
     { label: "Producto", className: "w-[28%]" },
     { label: "Imagen", className: "hidden w-[8%] sm:table-cell" },
@@ -50,8 +54,7 @@ export default function MovisurProductFilesTable({
     { label: "Tamano", className: "hidden w-[10%] xl:table-cell" },
     { label: "Descargas", className: "hidden w-[10%] xl:table-cell" },
     { label: "Venta", className: "w-[10%]" },
-    { label: "Estado", className: "w-[10%]" },
-    { label: "Acciones", className: "w-[12%] text-right" },
+    { label: "Acciones", className: "w-[18%] text-right" },
   ];
   const filteredFiles = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -74,6 +77,29 @@ export default function MovisurProductFilesTable({
     );
   }, [files, searchTerm]);
 
+  async function deleteFile(fileId: string) {
+    if (deletingId) return;
+
+    setDeletingId(fileId);
+    setMessage("");
+
+    const response = await fetch(`/api/admin/movisur/product-files/${fileId}`, {
+      method: "DELETE",
+    });
+    const payload = (await response.json().catch(() => null)) as {
+      message?: string;
+    } | null;
+
+    setDeletingId(null);
+
+    if (!response.ok) {
+      setMessage(payload?.message ?? "No se pudo eliminar el archivo.");
+      return;
+    }
+
+    router.refresh();
+  }
+
   return (
     <div className="overflow-hidden">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -93,6 +119,11 @@ export default function MovisurProductFilesTable({
           />
         </label>
       </div>
+      {message ? (
+        <div className="mb-4 rounded-lg bg-error-50 px-4 py-3 text-sm font-medium text-error-600 dark:bg-error-500/10 dark:text-error-300">
+          {message}
+        </div>
+      ) : null}
       <div className="max-w-full overflow-hidden">
         <table className="w-full table-fixed text-left">
           <thead>
@@ -165,18 +196,23 @@ export default function MovisurProductFilesTable({
                     {file.isForSale ? "Venta" : "-"}
                   </Badge>
                 </td>
-                <td className="px-2 py-4 sm:px-3">
-                  <Badge size="sm" color={file.isActive ? "success" : "light"}>
-                    {file.isActive ? "Activo" : "Inactivo"}
-                  </Badge>
-                </td>
                 <td className="px-2 py-4 text-right sm:px-3">
-                  <Link
-                    href={`${editBasePath}/${file.id}/edit`}
-                    className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.03]"
-                  >
-                    Editar
-                  </Link>
+                  <div className="flex justify-end gap-2">
+                    <Link
+                      href={`${editBasePath}/${file.id}/edit`}
+                      className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.03]"
+                    >
+                      Editar
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => deleteFile(file.id)}
+                      disabled={deletingId === file.id}
+                      className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.03]"
+                    >
+                      {deletingId === file.id ? "Eliminando..." : "Eliminar"}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
