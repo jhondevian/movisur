@@ -71,6 +71,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    {
+      url: url("/icloud-check-free"),
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: url("/frp-bypass"),
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
     ...products.map((product) => ({
       url: url(`/productos/${product.slug}`),
       lastModified: product.updatedAt,

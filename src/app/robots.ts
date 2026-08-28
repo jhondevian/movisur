@@ -6,7 +6,15 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/informacion", "/productos", "/licencias", "/alquiler"],
+        allow: [
+          "/",
+          "/informacion",
+          "/icloud-check-free",
+          "/frp-bypass",
+          "/productos",
+          "/licencias",
+          "/alquiler",
+        ],
         disallow: [
           "/admin",
           "/api",

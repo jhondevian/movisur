@@ -537,3 +537,28 @@ model TelegramFile {
   @@index([chatId, receivedAt], map: "telegram_files_chat_idx")
   @@map("telegram_files")
 }
+
+model IcloudCheckSettings {
+  id                 String    @id @default("default")
+  apiBaseUrl         String    @default("https://api.ifreeicloud.co.uk") @map("api_base_url") @db.VarChar(255)
+  apiKeyEncrypted    String?   @map("api_key_encrypted")
+  serviceId          String?   @map("service_id") @db.VarChar(40)
+  isEnabled          Boolean   @default(false) @map("is_enabled")
+  lastConnectionAt   DateTime? @map("last_connection_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("icloud_check_settings")
+}
+
+model IcloudCheckLookup {
+  id          String   @id @default(uuid()) @db.Uuid
+  identifier  String   @db.VarChar(80)
+  serviceId   String?  @map("service_id") @db.VarChar(40)
+  status      String   @default("completed") @db.VarChar(40)
+  response    String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([identifier, createdAt], map: "icloud_check_lookups_identifier_idx")
+  @@map("icloud_check_lookups")
+}

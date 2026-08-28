@@ -28,6 +28,8 @@ const globalForPrisma = globalThis as unknown as {
     adminNotification?: unknown;
     telegramSettings?: unknown;
     telegramFile?: unknown;
+    icloudCheckSettings?: unknown;
+    icloudCheckLookup?: unknown;
   };
   prismaSchemaVersion?: string;
 };
@@ -37,7 +39,7 @@ const pool = new pg.Pool({
 });
 const adapter = new PrismaPg(pool);
 
-const prismaSchemaVersion = "telegram-import-v1";
+const prismaSchemaVersion = "icloud-check-v1";
 const cachedPrisma = globalForPrisma.prisma;
 const shouldReuseCachedPrisma =
   cachedPrisma &&
@@ -65,6 +67,8 @@ const shouldReuseCachedPrisma =
   "adminNotification" in cachedPrisma &&
   "telegramSettings" in cachedPrisma &&
   "telegramFile" in cachedPrisma &&
+  "icloudCheckSettings" in cachedPrisma &&
+  "icloudCheckLookup" in cachedPrisma &&
   globalForPrisma.prismaSchemaVersion === prismaSchemaVersion;
 
 export const prisma =

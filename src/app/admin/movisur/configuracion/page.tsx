@@ -1,6 +1,12 @@
 import CreatorCommerceItemsForm from "@/components/movisur/CreatorCommerceItemsForm";
+import IcloudCheckSettingsForm from "@/components/icloud/IcloudCheckSettingsForm";
 import MovisurBrandCategoriesForm from "@/components/movisur/MovisurBrandCategoriesForm";
 import MovisurPaymentMethodsForm from "@/components/movisur/MovisurPaymentMethodsForm";
+import {
+  decryptIcloudApiKey,
+  getIcloudCheckSettings,
+  maskIcloudApiKey,
+} from "@/lib/icloud-check";
 import { ensureMovisurCommerceSettings } from "@/lib/movisur-commerce";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
@@ -70,6 +76,10 @@ async function ensureDefaultRentalTools() {
 
 export default async function MovisurConfiguracionPage() {
   const { paymentMethods } = await ensureMovisurCommerceSettings();
+  const icloudSettings = await getIcloudCheckSettings();
+  const envIcloudApiKey = process.env.IFREEICLOUD_API_KEY?.trim() || "";
+  const dbIcloudApiKey = decryptIcloudApiKey(icloudSettings.apiKeyEncrypted);
+  const icloudApiKey = envIcloudApiKey || dbIcloudApiKey;
   await ensureDefaultRentalTools();
 
   const [categories, licenseProducts, rentalTools] = await Promise.all([
@@ -106,6 +116,25 @@ export default async function MovisurConfiguracionPage() {
       </div>
 
       <MovisurPaymentMethodsForm methods={paymentMethods} />
+      <IcloudCheckSettingsForm
+        apiBaseUrl={icloudSettings.apiBaseUrl}
+        apiKeyMasked={
+          envIcloudApiKey
+            ? "Definida en IFREEICLOUD_API_KEY"
+            : maskIcloudApiKey(icloudApiKey)
+        }
+        hasApiKey={Boolean(icloudApiKey)}
+        isEnabled={icloudSettings.isEnabled}
+        lastConnectionAt={
+          icloudSettings.lastConnectionAt
+            ? new Intl.DateTimeFormat("es-PE", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              }).format(icloudSettings.lastConnectionAt)
+            : null
+        }
+        serviceId={icloudSettings.serviceId || ""}
+      />
       <MovisurBrandCategoriesForm categories={categories} />
       <CreatorCommerceItemsForm
         title="Licencias para creadores"
