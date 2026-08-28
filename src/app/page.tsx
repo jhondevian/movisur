@@ -189,7 +189,7 @@ export default async function Home({ searchParams }: HomeProps) {
             })),
           },
           {
-            title: "Alquiler",
+            title: "Alquileres",
             items: rentalTools.map((tool) => ({
               id: tool.id,
               productUrl: `/alquiler/${tool.id}`,

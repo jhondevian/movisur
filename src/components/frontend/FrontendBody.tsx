@@ -273,11 +273,13 @@ export default function FrontendBody({
       : filteredProducts;
   const alquilerSections = creatorCommerceSections.filter(
     (section) =>
-      section.items.length > 0 && section.title.toLowerCase() === "alquiler"
+      section.items.length > 0 &&
+      section.title.toLowerCase().startsWith("alquiler")
   );
   const otherCommerceSections = creatorCommerceSections.filter(
     (section) =>
-      section.items.length > 0 && section.title.toLowerCase() !== "alquiler"
+      section.items.length > 0 &&
+      !section.title.toLowerCase().startsWith("alquiler")
   );
   const heroCategories = brandCategories.slice(0, 6);
   const downloadMessage =
@@ -377,21 +379,7 @@ export default function FrontendBody({
       >
         <div className="mb-8">
           <div className="flex items-center justify-between gap-4">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedCategoryId("todos");
-                setIsFilterOpen(false);
-              }}
-              className={`rounded-lg px-5 py-3 text-sm font-semibold transition ${
-                selectedCategoryId === "todos"
-                  ? "bg-brand-500 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/10"
-              }`}
-            >
-              Todos
-            </button>
-
+            <div />
             <div className="flex min-w-0 items-center justify-end gap-2">
               <div className="flex min-w-0 items-center justify-end gap-2">
                 <div
