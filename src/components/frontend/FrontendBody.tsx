@@ -41,6 +41,19 @@ type CreatorCommerceSection = {
   items: CreatorCommerceItem[];
 };
 
+type FrontendProductCard = {
+  id: string;
+  productUrl: string;
+  title: string;
+  text: string | null;
+  imageUrl: string | null;
+  categoryId: string | null;
+  categoryName: string;
+  downloadUrl: string;
+  isForSale: boolean;
+  fileType: string;
+};
+
 function FileFallbackIcon() {
   return (
     <svg
@@ -69,6 +82,87 @@ type FrontendBodyProps = {
   productFiles: FrontendProductFile[];
 };
 
+function ProductCard({
+  hasConfirmedPurchase,
+  product,
+}: {
+  hasConfirmedPurchase: boolean;
+  product: FrontendProductCard;
+}) {
+  return (
+    <article className="flex min-h-[360px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950">
+      <Link
+        href={product.productUrl}
+        className="flex min-h-[84px] w-full max-w-[180px] items-start justify-center text-xl font-bold leading-snug text-gray-950 transition hover:text-brand-500 dark:text-white dark:hover:text-brand-400"
+      >
+        <span className="line-clamp-3 break-words">{product.title}</span>
+      </Link>
+
+      <Link
+        href={product.productUrl}
+        className="relative mt-4 flex h-24 w-full max-w-[180px] items-center justify-center"
+      >
+        {product.imageUrl ? (
+          <Image
+            src={product.imageUrl}
+            alt={product.title}
+            fill
+            sizes="180px"
+            className="object-contain transition duration-200 hover:scale-105"
+          />
+        ) : (
+          <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-500/10">
+            <FileFallbackIcon />
+          </span>
+        )}
+      </Link>
+
+      {product.text ? (
+        <div className="mt-6 min-h-[96px] w-full max-w-[180px]">
+          <p className="line-clamp-4 break-words text-sm leading-6 text-gray-600 dark:text-gray-400">
+            {product.text}{" "}
+            <button
+              type="button"
+              className="inline text-xs font-medium text-gray-500 underline-offset-2 hover:underline dark:text-gray-400"
+            >
+              Ver mas
+            </button>
+          </p>
+        </div>
+      ) : (
+        <div className="min-h-[96px] w-full max-w-[180px]" />
+      )}
+
+      <a
+        href={
+          product.isForSale && !hasConfirmedPurchase
+            ? "/informacion?comprar=1"
+            : product.downloadUrl
+        }
+        target={
+          product.fileType === "url" &&
+          (!product.isForSale || hasConfirmedPurchase)
+            ? "_blank"
+            : undefined
+        }
+        rel={
+          product.fileType === "url" &&
+          (!product.isForSale || hasConfirmedPurchase)
+            ? "noopener noreferrer"
+            : undefined
+        }
+        className="mt-auto flex w-full items-center justify-center rounded-lg bg-brand-500 px-5 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
+      >
+        {product.isForSale && !hasConfirmedPurchase
+          ? "Comprar"
+          : product.fileType === "video"
+          ? "Ver video"
+          : "Descargar"}
+      </a>
+    </article>
+  );
+}
+
 export default function FrontendBody({
   brandCategories,
   creatorCommerceSections,
@@ -82,6 +176,14 @@ export default function FrontendBody({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const availableCategories = fileCategories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    imageUrl: category.imageUrl,
+  }));
+  const frontendCategoryIds = new Set(
+    availableCategories.map((category) => category.id)
+  );
   const frontendProducts = productFiles.map((file) => ({
     id: file.id,
     productUrl: `/productos/${file.slug}`,
@@ -98,7 +200,10 @@ export default function FrontendBody({
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const categoryFiltered =
       selectedCategoryId === "todos"
-        ? frontendProducts
+        ? frontendProducts.filter(
+            (product) =>
+              !product.categoryId || !frontendCategoryIds.has(product.categoryId)
+          )
         : frontendProducts.filter(
             (product) => product.categoryId === selectedCategoryId
           );
@@ -111,12 +216,15 @@ export default function FrontendBody({
         .toLowerCase()
         .includes(normalizedSearch)
     );
-  }, [frontendProducts, searchTerm, selectedCategoryId]);
-  const availableCategories = fileCategories.map((category) => ({
-    id: category.id,
-    name: category.name,
-    imageUrl: category.imageUrl,
-  }));
+  }, [frontendCategoryIds, frontendProducts, searchTerm, selectedCategoryId]);
+  const frontendCategorySections = availableCategories
+    .map((category) => ({
+      ...category,
+      products: frontendProducts.filter(
+        (product) => product.categoryId === category.id
+      ),
+    }))
+    .filter((section) => section.products.length > 0);
   const heroCategories = brandCategories.slice(0, 6);
   const downloadMessage =
     downloadStatus === "empty"
@@ -330,7 +438,7 @@ export default function FrontendBody({
         <div className="mb-8 flex justify-center">
           <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
             {selectedCategoryId === "todos"
-              ? "Mostrando todos los productos"
+              ? "Archivos generales"
               : `Categoria: ${
                   availableCategories.find(
                     (category) => category.id === selectedCategoryId
@@ -341,88 +449,39 @@ export default function FrontendBody({
 
         <div className="flex flex-wrap justify-center gap-6">
           {filteredProducts.map((product) => (
-            <article
+            <ProductCard
               key={product.id}
-              className="flex min-h-[360px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950"
-            >
-              <Link
-                href={product.productUrl}
-                className="flex min-h-[84px] w-full max-w-[180px] items-start justify-center text-xl font-bold leading-snug text-gray-950 transition hover:text-brand-500 dark:text-white dark:hover:text-brand-400"
-              >
-                <span className="line-clamp-3 break-words">
-                  {product.title}
-                </span>
-              </Link>
-
-              <Link
-                href={product.productUrl}
-                className="relative mt-4 flex h-24 w-full max-w-[180px] items-center justify-center"
-              >
-                {product.imageUrl ? (
-                  <Image
-                    src={product.imageUrl}
-                    alt={product.title}
-                    fill
-                    sizes="180px"
-                    className="object-contain transition duration-200 hover:scale-105"
-                  />
-                ) : (
-                  <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-500/10">
-                    <FileFallbackIcon />
-                  </span>
-                )}
-              </Link>
-
-              {product.text ? (
-                <div className="mt-6 min-h-[96px] w-full max-w-[180px]">
-                  <p className="line-clamp-4 break-words text-sm leading-6 text-gray-600 dark:text-gray-400">
-                    {product.text}{" "}
-                    <button
-                      type="button"
-                      className="inline text-xs font-medium text-gray-500 underline-offset-2 hover:underline dark:text-gray-400"
-                    >
-                      Ver mas
-                    </button>
-                  </p>
-                </div>
-              ) : (
-                <div className="min-h-[96px] w-full max-w-[180px]" />
-              )}
-
-              <a
-                href={
-                  product.isForSale && !hasConfirmedPurchase
-                    ? "/informacion?comprar=1"
-                    : product.downloadUrl
-                }
-                target={
-                  product.fileType === "url" &&
-                  (!product.isForSale || hasConfirmedPurchase)
-                    ? "_blank"
-                    : undefined
-                }
-                rel={
-                  product.fileType === "url" &&
-                  (!product.isForSale || hasConfirmedPurchase)
-                    ? "noopener noreferrer"
-                    : undefined
-                }
-                className="mt-auto flex w-full items-center justify-center rounded-lg bg-brand-500 px-5 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
-              >
-                {product.isForSale && !hasConfirmedPurchase
-                  ? "Comprar"
-                  : product.fileType === "video"
-                  ? "Ver video"
-                  : "Descargar"}
-              </a>
-            </article>
+              hasConfirmedPurchase={hasConfirmedPurchase}
+              product={product}
+            />
           ))}
         </div>
         {filteredProducts.length === 0 ? (
           <p className="mt-10 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
-            No hay productos disponibles en esta categoria.
+            No hay archivos disponibles en esta seccion.
           </p>
         ) : null}
+
+        {selectedCategoryId === "todos"
+          ? frontendCategorySections.map((section) => (
+              <div key={section.id} className="mt-16">
+                <div className="mb-8 flex justify-start">
+                  <h2 className="rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white">
+                    {section.name}
+                  </h2>
+                </div>
+                <div className="flex flex-wrap justify-center gap-6">
+                  {section.products.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      hasConfirmedPurchase={hasConfirmedPurchase}
+                      product={product}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          : null}
 
         {creatorCommerceSections
           .filter((section) => section.items.length > 0)
