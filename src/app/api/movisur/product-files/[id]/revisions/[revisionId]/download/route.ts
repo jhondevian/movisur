@@ -1,6 +1,8 @@
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { getTemporaryTelegramDownloadUrl } from "@/lib/telegram-api";
+import { getTelegramBotToken } from "@/lib/telegram-settings";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -19,6 +21,19 @@ function redirectTo(location: string) {
       Location: location,
     },
   });
+}
+
+async function resolveDownloadUrl(downloadUrl: string) {
+  if (!downloadUrl.startsWith("telegram:")) return downloadUrl;
+
+  const fileId = downloadUrl.slice("telegram:".length);
+  const token = await getTelegramBotToken();
+
+  if (!fileId || !token) {
+    throw new Error("No se pudo generar el enlace temporal de Telegram.");
+  }
+
+  return getTemporaryTelegramDownloadUrl(token, fileId);
 }
 
 async function getAuthUserId() {
@@ -154,5 +169,9 @@ export async function GET(
     }
   });
 
-  return redirectTo(revision.downloadUrl);
+  try {
+    return redirectTo(await resolveDownloadUrl(revision.downloadUrl));
+  } catch {
+    return redirectTo("/?archivo=no-disponible");
+  }
 }

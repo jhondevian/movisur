@@ -7,6 +7,9 @@ import {
 } from "@/lib/telegram-api";
 import { getTelegramBotToken } from "@/lib/telegram-settings";
 
+const defaultLargeFileThresholdMb = 300;
+const bytesPerMb = 1024 * 1024;
+
 function slugify(value: string) {
   return value
     .normalize("NFD")
@@ -87,9 +90,42 @@ async function downloadTelegramFile({
 
   return {
     downloadUrl: `/uploads/movisur/products/telegram/${storedName}`,
+    distribution: "file" as const,
     fileSize: fileInfo.file_size ?? null,
     storedName,
   };
+}
+
+async function getTelegramDownloadReference({
+  fileId,
+  fileName,
+  largeFileThresholdMb,
+}: {
+  fileId: string;
+  fileName: string | null;
+  largeFileThresholdMb: number;
+}) {
+  const token = await getTelegramBotToken();
+
+  if (!token) {
+    throw new Error("Configura el token del bot de Telegram.");
+  }
+
+  const fileInfo = await getTelegramFileInfo(token, fileId);
+  const thresholdBytes = largeFileThresholdMb * bytesPerMb;
+  const isLargeFile =
+    typeof fileInfo.file_size === "number" && fileInfo.file_size > thresholdBytes;
+
+  if (isLargeFile) {
+    return {
+      distribution: "url" as const,
+      downloadUrl: `telegram:${fileId}`,
+      fileSize: fileInfo.file_size ?? null,
+      storedName: fileName,
+    };
+  }
+
+  return downloadTelegramFile({ fileId, fileName });
 }
 
 export async function importTelegramFileToMovisur(telegramFileId: string) {
@@ -122,9 +158,15 @@ export async function importTelegramFileToMovisurWithOwner(
     return { importedFileId: telegramFile.importedFileId, reused: true };
   }
 
-  const downloaded = await downloadTelegramFile({
+  const settings = await prisma.telegramSettings.findUnique({
+    where: { id: "default" },
+    select: { largeFileThresholdMb: true },
+  });
+  const downloaded = await getTelegramDownloadReference({
     fileId: telegramFile.fileId,
     fileName: telegramFile.fileName,
+    largeFileThresholdMb:
+      settings?.largeFileThresholdMb ?? defaultLargeFileThresholdMb,
   });
   const name =
     telegramFile.fileName ||
@@ -139,7 +181,7 @@ export async function importTelegramFileToMovisurWithOwner(
     const productFile = await tx.movisurProductFile.create({
       data: {
         description: telegramFile.caption || null,
-        distribution: "file",
+        distribution: downloaded.distribution,
         downloadUrl: downloaded.downloadUrl,
         fileMimeType: telegramFile.fileMimeType,
         fileName: telegramFile.fileName || downloaded.storedName,
@@ -156,7 +198,7 @@ export async function importTelegramFileToMovisurWithOwner(
 
     await tx.movisurProductFileRevision.create({
       data: {
-        distribution: "file",
+        distribution: downloaded.distribution,
         downloadUrl: downloaded.downloadUrl,
         fileMimeType: telegramFile.fileMimeType,
         fileName: telegramFile.fileName || downloaded.storedName,

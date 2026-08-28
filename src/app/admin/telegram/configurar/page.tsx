@@ -49,6 +49,7 @@ export default async function AdminTelegramConfigurarPage() {
         }
         botUsername={settings.botUsername || ""}
         hasBotToken={Boolean(token)}
+        largeFileThresholdMb={settings.largeFileThresholdMb}
         lastConnectionCheckAt={formatDate(settings.lastConnectionCheckAt)}
         lastWebhookSetAt={formatDate(settings.lastWebhookSetAt)}
         webhookSecret={settings.webhookSecret || ""}

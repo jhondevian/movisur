@@ -62,7 +62,7 @@ export async function DELETE(
     where: { productFileId: id },
   });
 
-  if (revisionCount <= 1) {
+  if (revisionCount <= 1 && user.role !== "admin") {
     return NextResponse.json(
       { message: "No puedes eliminar la unica version del archivo." },
       { status: 400 }
@@ -71,6 +71,14 @@ export async function DELETE(
 
   try {
     const result = await prisma.$transaction(async (tx) => {
+      if (revisionCount <= 1) {
+        await tx.movisurProductFileRevision.delete({
+          where: { id: revision.id },
+        });
+
+        return { promoted: null };
+      }
+
       if (!revision.isCurrent) {
         await tx.movisurProductFileRevision.delete({
           where: { id: revision.id },

@@ -4,6 +4,15 @@ type TelegramApiResponse<T> = {
   description?: string;
 };
 
+const defaultTelegramApiBaseUrl = "https://api.telegram.org";
+
+function getTelegramApiBaseUrl() {
+  return (
+    process.env.TELEGRAM_API_BASE_URL?.trim().replace(/\/+$/, "") ||
+    defaultTelegramApiBaseUrl
+  );
+}
+
 export type TelegramBotInfo = {
   id: number;
   is_bot: boolean;
@@ -23,7 +32,7 @@ async function telegramRequest<T>(
   method: string,
   body?: Record<string, unknown>
 ) {
-  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+  const response = await fetch(`${getTelegramApiBaseUrl()}/bot${token}/${method}`, {
     method: body ? "POST" : "GET",
     headers: body ? { "Content-Type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
@@ -72,5 +81,25 @@ export function getTelegramFileInfo(token: string, fileId: string) {
 }
 
 export function getTelegramFileDownloadUrl(token: string, filePath: string) {
-  return `https://api.telegram.org/file/bot${token}/${filePath}`;
+  if (/^https?:\/\//i.test(filePath)) return filePath;
+
+  const normalizedPath = filePath.replace(/\\/g, "/");
+  const fileSegment = normalizedPath.startsWith("/")
+    ? `/file/bot${token}${normalizedPath}`
+    : `/file/bot${token}/${normalizedPath}`;
+
+  return `${getTelegramApiBaseUrl()}${fileSegment}`;
+}
+
+export async function getTemporaryTelegramDownloadUrl(
+  token: string,
+  fileId: string
+) {
+  const fileInfo = await getTelegramFileInfo(token, fileId);
+
+  if (!fileInfo.file_path) {
+    throw new Error("Telegram no entrego una ruta de descarga para este archivo.");
+  }
+
+  return getTelegramFileDownloadUrl(token, fileInfo.file_path);
 }

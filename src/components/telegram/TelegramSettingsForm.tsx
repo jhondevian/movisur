@@ -9,6 +9,7 @@ type TelegramSettingsFormProps = {
   botTokenMasked: string;
   botUsername: string;
   hasBotToken: boolean;
+  largeFileThresholdMb: number;
   lastConnectionCheckAt: string | null;
   lastWebhookSetAt: string | null;
   webhookSecret: string;
@@ -21,6 +22,7 @@ export default function TelegramSettingsForm({
   botTokenMasked,
   botUsername,
   hasBotToken,
+  largeFileThresholdMb,
   lastConnectionCheckAt,
   lastWebhookSetAt,
   webhookSecret,
@@ -32,6 +34,7 @@ export default function TelegramSettingsForm({
     autoImport,
     botToken: "",
     botUsername,
+    largeFileThresholdMb: String(largeFileThresholdMb),
     webhookSecret,
   });
   const [message, setMessage] = useState("");
@@ -128,6 +131,31 @@ export default function TelegramSettingsForm({
             placeholder="Clave privada para validar Telegram"
             className="h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
           />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Limite para URL temporal
+          </span>
+          <div className="flex h-11 overflow-hidden rounded-lg border border-gray-300 bg-white shadow-theme-xs focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950">
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={form.largeFileThresholdMb}
+              onChange={(event) =>
+                updateField("largeFileThresholdMb", event.target.value)
+              }
+              className="w-full border-0 bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-hidden dark:text-white/90"
+            />
+            <span className="flex items-center border-l border-gray-200 px-3 text-sm font-medium text-gray-500 dark:border-gray-800 dark:text-gray-400">
+              MB
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Los archivos mayores a este peso se guardaran como enlace temporal
+            de Telegram.
+          </p>
         </label>
 
         <label className="block">

@@ -505,6 +505,7 @@ model TelegramSettings {
   webhookSecret         String?   @map("webhook_secret") @db.VarChar(160)
   allowedChatIds        String?   @map("allowed_chat_ids")
   autoImport            Boolean   @default(false) @map("auto_import")
+  largeFileThresholdMb  Int       @default(300) @map("large_file_threshold_mb")
   lastWebhookSetAt      DateTime? @map("last_webhook_set_at") @db.Timestamptz(6)
   lastConnectionCheckAt DateTime? @map("last_connection_check_at") @db.Timestamptz(6)
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)

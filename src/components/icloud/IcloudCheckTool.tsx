@@ -154,6 +154,39 @@ function humanizeKey(key: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function CopyIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <rect x="8" y="8" width="11" height="11" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="M12 15V3" />
+      <path d="m7 8 5-5 5 5" />
+      <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+    </svg>
+  );
+}
+
 function IcloudResultCard({ result }: { result: unknown }) {
   const checkedAt = new Intl.DateTimeFormat("en-US", {
     dateStyle: "long",
@@ -179,11 +212,15 @@ function IcloudResultCard({ result }: { result: unknown }) {
   }
 
   async function shareResult() {
-    if (navigator.share) {
-      await navigator.share({
-        text: shareText,
-        title: normalized.title,
-      });
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          text: shareText,
+          title: normalized.title,
+        });
+        return;
+      }
+    } catch {
       return;
     }
 
@@ -204,7 +241,7 @@ function IcloudResultCard({ result }: { result: unknown }) {
   }
 
   return (
-    <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center dark:border-gray-800 dark:bg-gray-900">
+    <section className="mt-8 border-t border-gray-200 pt-6 text-center dark:border-gray-800">
       <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
         {normalized.title}
       </h2>
@@ -227,30 +264,31 @@ function IcloudResultCard({ result }: { result: unknown }) {
         </dl>
       ) : null}
 
-      <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+      <div className="mt-6 flex justify-center gap-3">
         <button
           type="button"
           onClick={copyResult}
-          className="rounded-lg border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+          aria-label="Copiar listado"
+          title="Copiar listado"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
         >
-          {copyMessage || "Copiar listado"}
+          <CopyIcon />
         </button>
         <button
           type="button"
           onClick={shareResult}
-          className="rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
+          aria-label="Compartir listado"
+          title="Compartir listado"
+          className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-500 text-white transition hover:bg-brand-600"
         >
-          Compartir
+          <ShareIcon />
         </button>
-        <a
-          href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-lg border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
-        >
-          WhatsApp
-        </a>
       </div>
+      {copyMessage ? (
+        <p className="mt-2 text-xs font-medium text-brand-500">
+          {copyMessage}
+        </p>
+      ) : null}
 
       <div className="mt-6 border-t border-gray-200 pt-5 dark:border-gray-800">
         <p className="text-lg font-bold text-gray-900 dark:text-white">
@@ -258,7 +296,7 @@ function IcloudResultCard({ result }: { result: unknown }) {
         </p>
         <p className="mt-1 text-xs text-gray-400">Movisur</p>
       </div>
-    </div>
+    </section>
   );
 }
 

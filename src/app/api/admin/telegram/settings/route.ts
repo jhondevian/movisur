@@ -16,6 +16,7 @@ type TelegramSettingsPayload = {
   autoImport?: boolean;
   botToken?: string;
   botUsername?: string;
+  largeFileThresholdMb?: string | number;
   registerWebhook?: boolean;
   webhookSecret?: string;
 };
@@ -43,6 +44,10 @@ export async function POST(request: NextRequest) {
   const existingToken = decryptTelegramToken(current.botTokenEncrypted);
   const finalToken = token || process.env.TELEGRAM_BOT_TOKEN || existingToken;
   const webhookSecret = String(payload.webhookSecret || "").trim();
+  const largeFileThresholdMb = Math.max(
+    1,
+    Math.floor(Number(payload.largeFileThresholdMb) || 300)
+  );
 
   if (!finalToken) {
     return NextResponse.json(
@@ -80,6 +85,7 @@ export async function POST(request: NextRequest) {
         botTokenEncrypted: token
           ? encryptTelegramToken(token)
           : current.botTokenEncrypted,
+        largeFileThresholdMb,
         botUsername:
           String(payload.botUsername || "").trim() || bot.username || null,
         lastConnectionCheckAt: now,
