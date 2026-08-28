@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
 
 export const runtime = "nodejs";
 
@@ -20,7 +22,80 @@ type ConfirmPaymentPayload = {
   price?: string;
   currency?: string;
   method?: string;
+  proofImageUrl?: string;
 };
+
+const allowedProofTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+async function savePaymentProof(file: File) {
+  if (file.size <= 0) {
+    throw new Error("Selecciona una imagen valida del comprobante.");
+  }
+
+  if (!allowedProofTypes.has(file.type)) {
+    throw new Error("El comprobante debe ser PNG, JPG o WebP.");
+  }
+
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error("El comprobante no debe superar 8 MB.");
+  }
+
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const safeExtension = ["png", "jpg", "jpeg", "webp"].includes(extension)
+    ? extension
+    : "jpg";
+  const fileName = `proof-${Date.now()}-${crypto.randomUUID()}.${safeExtension}`;
+  const uploadDir = path.join(
+    process.cwd(),
+    "public",
+    "uploads",
+    "movisur",
+    "payment-proofs"
+  );
+
+  await mkdir(uploadDir, { recursive: true });
+  await writeFile(
+    path.join(uploadDir, fileName),
+    Buffer.from(await file.arrayBuffer())
+  );
+
+  return `/uploads/movisur/payment-proofs/${fileName}`;
+}
+
+async function parseConfirmPaymentPayload(request: NextRequest) {
+  const contentType = request.headers.get("content-type") || "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+    const proof = formData.get("proof");
+
+    if (!(proof instanceof File)) {
+      throw new Error("Sube una captura o imagen del comprobante.");
+    }
+
+    return {
+      payload: {
+        planId: String(formData.get("planId") || ""),
+        planName: String(formData.get("planName") || ""),
+        commerceType: String(formData.get("commerceType") || "") as
+          | "license"
+          | "rental"
+          | undefined,
+        offerId: String(formData.get("offerId") || ""),
+        price: String(formData.get("price") || ""),
+        currency: String(formData.get("currency") || ""),
+        method: String(formData.get("method") || ""),
+      },
+      proofImageUrl: await savePaymentProof(proof),
+    };
+  }
+
+  const payload = (await request.json().catch(() => null)) as
+    | ConfirmPaymentPayload
+    | null;
+
+  return { payload, proofImageUrl: payload?.proofImageUrl || "" };
+}
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -63,9 +138,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const payload = (await request.json().catch(() => null)) as
-    | ConfirmPaymentPayload
-    | null;
+  let parsedPayload;
+
+  try {
+    parsedPayload = await parseConfirmPaymentPayload(request);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Sube una captura o imagen del comprobante.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const { payload, proofImageUrl } = parsedPayload;
 
   const paymentMethod =
     payload?.method === "transferencia" || payload?.method === "yape"
@@ -82,6 +171,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!proofImageUrl) {
+    return NextResponse.json(
+      { message: "Sube una captura o imagen del comprobante." },
+      { status: 400 }
+    );
+  }
+
   const currency = payload.currency || "USD";
   let title = `Pago ${paymentMethod === "yape" ? "Yape" : "Binance"} por confirmar`;
   let message = "";
@@ -92,6 +188,7 @@ export async function POST(request: NextRequest) {
     userEmail: authUser.email,
     userName: `${authUser.firstName} ${authUser.lastName}`.trim(),
     currency,
+    proofImageUrl,
   };
 
   if (payload.commerceType === "license" && payload.offerId) {

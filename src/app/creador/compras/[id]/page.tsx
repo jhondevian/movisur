@@ -1,6 +1,7 @@
 import AdminPurchaseActions from "@/components/movisur/AdminPurchaseActions";
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
@@ -25,6 +26,7 @@ type PaymentMetadata = {
   confirmedAt?: string;
   confirmedByName?: string;
   confirmedByEmail?: string;
+  proofImageUrl?: string;
   [key: string]: unknown;
 };
 
@@ -195,6 +197,38 @@ export default async function CreadorCompraDetallePage({
           />
         </div>
       </div>
+
+      {metadata.proofImageUrl ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                Comprobante de pago
+              </h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Imagen enviada por el usuario antes de confirmar.
+              </p>
+            </div>
+            <a
+              href={metadata.proofImageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-brand-500 hover:text-brand-600"
+            >
+              Abrir imagen
+            </a>
+          </div>
+          <div className="relative mt-5 h-96 overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-900">
+            <Image
+              src={metadata.proofImageUrl}
+              alt="Comprobante de pago"
+              fill
+              sizes="(max-width: 768px) 100vw, 900px"
+              className="object-contain p-3"
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

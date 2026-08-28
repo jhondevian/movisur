@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 const sectionPreviewLimit = 6;
+const mobileSectionPreviewLimit = 3;
 
 type FrontendCategory = {
   id: string;
@@ -86,13 +87,19 @@ type FrontendBodyProps = {
 
 function ProductCard({
   hasConfirmedPurchase,
+  hideOnMobile = false,
   product,
 }: {
   hasConfirmedPurchase: boolean;
+  hideOnMobile?: boolean;
   product: FrontendProductCard;
 }) {
   return (
-    <article className="flex min-h-[360px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950">
+    <article
+      className={`min-h-[360px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950 ${
+        hideOnMobile ? "hidden sm:flex" : "flex"
+      }`}
+    >
       <Link
         href={product.productUrl}
         className="flex min-h-[84px] w-full max-w-[180px] items-start justify-center text-xl font-bold leading-snug text-gray-950 transition hover:text-brand-500 dark:text-white dark:hover:text-brand-400"
@@ -516,10 +523,14 @@ export default function FrontendBody({
                   />
 
                   <div className="flex flex-wrap justify-center gap-6">
-                    {section.items.slice(0, sectionPreviewLimit).map((item) => (
+                    {section.items.slice(0, sectionPreviewLimit).map((item, index) => (
                       <article
                         key={item.id}
-                        className="flex min-h-[320px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950"
+                        className={`min-h-[320px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950 ${
+                          index >= mobileSectionPreviewLimit
+                            ? "hidden sm:flex"
+                            : "flex"
+                        }`}
                       >
                         <Link
                           href={item.productUrl}
@@ -577,10 +588,11 @@ export default function FrontendBody({
                 <div className="flex flex-wrap justify-center gap-6">
                   {section.products
                     .slice(0, sectionPreviewLimit)
-                    .map((product) => (
+                    .map((product, index) => (
                       <ProductCard
                         key={product.id}
                         hasConfirmedPurchase={hasConfirmedPurchase}
+                        hideOnMobile={index >= mobileSectionPreviewLimit}
                         product={product}
                       />
                     ))}
@@ -600,10 +612,12 @@ export default function FrontendBody({
               />
 
               <div className="flex flex-wrap justify-center gap-6">
-                {section.items.slice(0, sectionPreviewLimit).map((item) => (
+                {section.items.slice(0, sectionPreviewLimit).map((item, index) => (
                   <article
                     key={item.id}
-                    className="flex min-h-[320px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950"
+                    className={`min-h-[320px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950 ${
+                      index >= mobileSectionPreviewLimit ? "hidden sm:flex" : "flex"
+                    }`}
                   >
                     <Link
                       href={item.productUrl}
@@ -658,10 +672,11 @@ export default function FrontendBody({
               title="Archivos"
             />
             <div className="flex flex-wrap justify-center gap-6">
-              {visibleGeneralProducts.map((product) => (
+              {visibleGeneralProducts.map((product, index) => (
                 <ProductCard
                   key={product.id}
                   hasConfirmedPurchase={hasConfirmedPurchase}
+                  hideOnMobile={index >= mobileSectionPreviewLimit}
                   product={product}
                 />
               ))}

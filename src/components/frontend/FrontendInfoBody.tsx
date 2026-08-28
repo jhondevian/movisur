@@ -99,6 +99,7 @@ export default function FrontendInfoBody() {
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [message, setMessage] = useState("");
   const [paymentMessage, setPaymentMessage] = useState("");
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -154,6 +155,10 @@ export default function FrontendInfoBody() {
 
     const plan = visiblePlans[0];
     if (!plan) return;
+    if (!paymentProof) {
+      setPaymentMessage("Sube una captura o imagen del comprobante.");
+      return;
+    }
 
     setConfirmingPayment(true);
     setPaymentMessage("");
@@ -170,16 +175,17 @@ export default function FrontendInfoBody() {
       return;
     }
 
+    const formData = new FormData();
+    formData.set("method", method.code);
+    formData.set("planId", plan.id);
+    formData.set("planName", plan.name);
+    formData.set("price", plan.price);
+    formData.set("currency", sale.settings.currency);
+    formData.set("proof", paymentProof);
+
     const response = await fetch("/api/movisur/confirm-payment", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        method: method.code,
-        planId: plan.id,
-        planName: plan.name,
-        price: plan.price,
-        currency: sale.settings.currency,
-      }),
+      body: formData,
     });
 
     setConfirmingPayment(false);
@@ -192,7 +198,8 @@ export default function FrontendInfoBody() {
       return;
     }
 
-    setPaymentMessage("Pago confirmado. El admin recibira una notificacion.");
+    setPaymentProof(null);
+    setPaymentMessage("Pago enviado con comprobante. El admin recibira una notificacion.");
   }
 
   return (
@@ -491,11 +498,37 @@ export default function FrontendInfoBody() {
                             {method.config.notes}
                           </p>
                         )}
+                        {method.code === "binance" && (
+                          <label className="mt-5 block rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm font-medium text-gray-700 transition hover:border-brand-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                            <span className="block font-semibold text-gray-950 dark:text-white">
+                              Comprobante de pago
+                            </span>
+                            <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                              Sube una captura PNG, JPG o WebP.
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              className="mt-3 block w-full text-xs"
+                              onChange={(event) => {
+                                setPaymentProof(event.target.files?.[0] ?? null);
+                                setPaymentMessage("");
+                              }}
+                            />
+                            {paymentProof ? (
+                              <span className="mt-2 block truncate text-xs font-semibold text-brand-500">
+                                {paymentProof.name}
+                              </span>
+                            ) : null}
+                          </label>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleConfirmPayment(method)}
                           disabled={
-                            method.code !== "binance" || confirmingPayment
+                            method.code !== "binance" ||
+                            confirmingPayment ||
+                            !paymentProof
                           }
                           className="mt-5 w-full rounded-lg bg-brand-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-300"
                         >

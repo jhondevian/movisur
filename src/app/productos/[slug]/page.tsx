@@ -272,7 +272,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             >
               Volver a productos
             </Link>
-            <h1 className="mx-auto mt-5 max-w-5xl text-[42px] font-extrabold leading-[1.04] text-gray-950 dark:text-white sm:text-[64px] lg:text-[72px]">
+            <h1 className="mx-auto mt-5 max-w-5xl break-words text-[42px] font-extrabold leading-[1.04] text-gray-950 dark:text-white sm:text-[64px] lg:text-[72px]">
               {product.name}
             </h1>
             {product.description ? (
@@ -309,18 +309,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </a>
             </div>
 
-            <div className="mt-10 flex flex-wrap justify-center gap-5 sm:gap-7">
+            <div className="mt-10 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
               {[
                 { label: "Tipo", value: getFileTypeLabel(product.fileType) },
                 { label: "Tamano", value: formatSize(product.fileSize) },
                 { label: "Categoria", value: product.category?.name || "-" },
                 { label: "Acceso", value: product.isForSale ? "Venta" : "Libre" },
               ].map((item) => (
-                <div key={item.label} className="flex flex-col items-center gap-2">
-                  <span className="flex h-14 min-w-14 items-center justify-center rounded-full bg-white px-4 text-sm font-bold text-gray-950 shadow-theme-lg ring-1 ring-gray-100 dark:bg-gray-900 dark:text-white dark:ring-gray-800 sm:h-16">
+                <div key={item.label} className="min-w-0 text-center">
+                  <span className="flex min-h-14 w-full min-w-0 items-center justify-center rounded-2xl bg-white px-3 py-3 text-center text-xs font-bold leading-tight text-gray-950 shadow-theme-lg ring-1 ring-gray-100 dark:bg-gray-900 dark:text-white dark:ring-gray-800 sm:min-h-16 sm:text-sm">
                     {item.value}
                   </span>
-                  <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                  <span className="mt-2 block text-sm font-semibold text-gray-600 dark:text-gray-300">
                     {item.label}
                   </span>
                 </div>
