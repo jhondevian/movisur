@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+const sectionPreviewLimit = 6;
+
 type FrontendCategory = {
   id: string;
   name: string;
@@ -163,6 +165,46 @@ function ProductCard({
   );
 }
 
+function SectionTitle({
+  href,
+  showMore,
+  title,
+}: {
+  href: string;
+  showMore: boolean;
+  title: string;
+}) {
+  return (
+    <div className="mb-8 flex items-center justify-between gap-4">
+      <h2 className="rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white">
+        {title}
+      </h2>
+      {showMore ? (
+        <Link
+          href={href}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/5"
+          aria-label={`Ver mas ${title}`}
+        >
+          <svg
+            aria-hidden="true"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M5 12h14m-6-6 6 6-6 6"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+            />
+          </svg>
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
 export default function FrontendBody({
   brandCategories,
   creatorCommerceSections,
@@ -225,6 +267,18 @@ export default function FrontendBody({
       ),
     }))
     .filter((section) => section.products.length > 0);
+  const visibleGeneralProducts =
+    selectedCategoryId === "todos"
+      ? filteredProducts.slice(0, sectionPreviewLimit)
+      : filteredProducts;
+  const alquilerSections = creatorCommerceSections.filter(
+    (section) =>
+      section.items.length > 0 && section.title.toLowerCase() === "alquiler"
+  );
+  const otherCommerceSections = creatorCommerceSections.filter(
+    (section) =>
+      section.items.length > 0 && section.title.toLowerCase() !== "alquiler"
+  );
   const heroCategories = brandCategories.slice(0, 6);
   const downloadMessage =
     downloadStatus === "empty"
@@ -435,66 +489,130 @@ export default function FrontendBody({
           </div>
         </div>
 
-        <div className="mb-8 flex justify-center">
-          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-            {selectedCategoryId === "todos"
-              ? "Archivos generales"
-              : `Categoria: ${
-                  availableCategories.find(
-                    (category) => category.id === selectedCategoryId
-                  )?.name || "Seleccionada"
-                }`}
-          </p>
-        </div>
+        {selectedCategoryId !== "todos" ? (
+          <>
+            <div className="mb-8 flex justify-center">
+              <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                Categoria:{" "}
+                {availableCategories.find(
+                  (category) => category.id === selectedCategoryId
+                )?.name || "Seleccionada"}
+              </p>
+            </div>
 
-        <div className="flex flex-wrap justify-center gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              hasConfirmedPurchase={hasConfirmedPurchase}
-              product={product}
-            />
-          ))}
-        </div>
-        {filteredProducts.length === 0 ? (
-          <p className="mt-10 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
-            No hay archivos disponibles en esta seccion.
-          </p>
+            <div className="flex flex-wrap justify-center gap-6">
+              {visibleGeneralProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  hasConfirmedPurchase={hasConfirmedPurchase}
+                  product={product}
+                />
+              ))}
+            </div>
+            {filteredProducts.length === 0 ? (
+              <p className="mt-10 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                No hay archivos disponibles en esta seccion.
+              </p>
+            ) : null}
+          </>
         ) : null}
+
+        {selectedCategoryId === "todos"
+          ? alquilerSections
+              .map((section) => (
+                <div key={section.title} className="mt-16 first:mt-0">
+                  <SectionTitle
+                    href="/productos?tipo=alquiler"
+                    showMore={section.items.length > sectionPreviewLimit}
+                    title={section.title}
+                  />
+
+                  <div className="flex flex-wrap justify-center gap-6">
+                    {section.items.slice(0, sectionPreviewLimit).map((item) => (
+                      <article
+                        key={item.id}
+                        className="flex min-h-[320px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950"
+                      >
+                        <Link
+                          href={item.productUrl}
+                          className="flex min-h-14 items-start justify-center text-xl font-bold leading-snug text-gray-950 transition hover:text-brand-500 dark:text-white dark:hover:text-brand-400"
+                        >
+                          {item.title}
+                        </Link>
+
+                        <Link
+                          href={item.productUrl}
+                          className="relative mt-5 flex h-24 w-full items-center justify-center"
+                        >
+                          {item.imageUrl ? (
+                            <Image
+                              src={item.imageUrl}
+                              alt={item.title}
+                              fill
+                              sizes="180px"
+                              className="object-contain transition duration-200 hover:scale-105"
+                            />
+                          ) : (
+                            <span className="text-3xl font-extrabold text-gray-950 dark:text-white">
+                              {item.title.slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </Link>
+
+                        <div className="mt-8 text-center">
+                          <p className="text-lg font-extrabold text-gray-950 dark:text-white">
+                            {item.currency} {item.price}
+                          </p>
+                        </div>
+
+                        <Link
+                          href={item.productUrl}
+                          className="mt-auto flex w-full items-center justify-center rounded-lg bg-brand-500 px-5 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
+                        >
+                          Vendedores
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ))
+          : null}
 
         {selectedCategoryId === "todos"
           ? frontendCategorySections.map((section) => (
               <div key={section.id} className="mt-16">
-                <div className="mb-8 flex justify-start">
-                  <h2 className="rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white">
-                    {section.name}
-                  </h2>
-                </div>
+                <SectionTitle
+                  href={`/productos?categoria=${section.id}`}
+                  showMore={section.products.length > sectionPreviewLimit}
+                  title={section.name}
+                />
                 <div className="flex flex-wrap justify-center gap-6">
-                  {section.products.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      hasConfirmedPurchase={hasConfirmedPurchase}
-                      product={product}
-                    />
-                  ))}
+                  {section.products
+                    .slice(0, sectionPreviewLimit)
+                    .map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        hasConfirmedPurchase={hasConfirmedPurchase}
+                        product={product}
+                      />
+                    ))}
                 </div>
               </div>
             ))
           : null}
 
-        {creatorCommerceSections
-          .filter((section) => section.items.length > 0)
+        {selectedCategoryId === "todos"
+          ? otherCommerceSections
           .map((section) => (
             <div key={section.title} className="mt-16">
-              <div className="mb-8 flex justify-start">
-                <h2 className="rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white">
-                  {section.title}
-                </h2>
-              </div>
+              <SectionTitle
+                href="/productos"
+                showMore={section.items.length > sectionPreviewLimit}
+                title={section.title}
+              />
 
               <div className="flex flex-wrap justify-center gap-6">
-                {section.items.map((item) => (
+                {section.items.slice(0, sectionPreviewLimit).map((item) => (
                   <article
                     key={item.id}
                     className="flex min-h-[320px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950"
@@ -541,7 +659,32 @@ export default function FrontendBody({
                 ))}
               </div>
             </div>
-          ))}
+          ))
+          : null}
+
+        {selectedCategoryId === "todos" ? (
+          <div className="mt-16">
+            <SectionTitle
+              href="/productos"
+              showMore={filteredProducts.length > sectionPreviewLimit}
+              title="Archivos"
+            />
+            <div className="flex flex-wrap justify-center gap-6">
+              {visibleGeneralProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  hasConfirmedPurchase={hasConfirmedPurchase}
+                  product={product}
+                />
+              ))}
+            </div>
+            {filteredProducts.length === 0 ? (
+              <p className="mt-10 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                No hay archivos disponibles en esta seccion.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     </main>
   );

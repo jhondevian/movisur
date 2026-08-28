@@ -23,9 +23,29 @@ type ProductItem = {
   isForSale: boolean;
 };
 
+type CommerceItem = {
+  id: string;
+  productUrl: string;
+  title: string;
+  text: string | null;
+  imageUrl: string | null;
+  price: string;
+  currency: string;
+};
+
+type CommerceSection = {
+  title: string;
+  type: string;
+  items: CommerceItem[];
+};
+
 type ProductsCatalogProps = {
   categories: ProductCategory[];
+  commerceSections?: CommerceSection[];
   hasConfirmedPurchase: boolean;
+  initialCategoryId?: string;
+  initialSearchTerm?: string;
+  initialType?: string;
   products: ProductItem[];
 };
 
@@ -125,15 +145,74 @@ function ProductCard({
   );
 }
 
+function CommerceCard({ item }: { item: CommerceItem }) {
+  return (
+    <article className="flex min-h-[320px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center shadow-theme-xs ring-1 ring-gray-100 sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950 dark:ring-gray-800">
+      <Link
+        href={item.productUrl}
+        className="flex min-h-14 items-start justify-center text-xl font-bold leading-snug text-gray-950 transition hover:text-brand-500 dark:text-white dark:hover:text-brand-400"
+      >
+        {item.title}
+      </Link>
+
+      <Link
+        href={item.productUrl}
+        className="relative mt-5 flex h-24 w-full items-center justify-center"
+      >
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt={item.title}
+            fill
+            sizes="180px"
+            className="object-contain transition duration-200 hover:scale-105"
+          />
+        ) : (
+          <span className="text-3xl font-extrabold text-gray-950 dark:text-white">
+            {item.title.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+      </Link>
+
+      <div className="mt-8 text-center">
+        <p className="text-lg font-extrabold text-gray-950 dark:text-white">
+          {item.currency} {item.price}
+        </p>
+      </div>
+
+      <Link
+        href={item.productUrl}
+        className="mt-auto flex w-full items-center justify-center rounded-lg bg-brand-500 px-5 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"
+      >
+        Vendedores
+      </Link>
+    </article>
+  );
+}
+
 export default function ProductsCatalog({
   categories,
+  commerceSections = [],
   hasConfirmedPurchase,
+  initialCategoryId = "todos",
+  initialSearchTerm = "",
+  initialType,
   products,
 }: ProductsCatalogProps) {
-  const [selectedCategoryId, setSelectedCategoryId] = useState("todos");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState(
+    initialType ||
+      (categories.some((category) => category.id === initialCategoryId)
+      ? initialCategoryId
+      : "todos")
+  );
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+  const selectedCommerceSection = commerceSections.find(
+    (section) => section.type === selectedCategoryId
+  );
   const filteredProducts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
+    if (selectedCommerceSection) return [];
+
     const categoryProducts =
       selectedCategoryId === "todos"
         ? products
@@ -152,7 +231,20 @@ export default function ProductsCatalog({
         .toLowerCase()
         .includes(query)
     );
-  }, [products, searchTerm, selectedCategoryId]);
+  }, [products, searchTerm, selectedCategoryId, selectedCommerceSection]);
+  const filteredCommerceItems = useMemo(() => {
+    if (!selectedCommerceSection) return [];
+
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return selectedCommerceSection.items;
+
+    return selectedCommerceSection.items.filter((item) =>
+      [item.title, item.text || "", selectedCommerceSection.title]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [searchTerm, selectedCommerceSection]);
 
   return (
     <main className="bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
@@ -181,6 +273,20 @@ export default function ProductsCatalog({
             >
               Todos
             </button>
+            {commerceSections.map((section) => (
+              <button
+                key={section.type}
+                type="button"
+                onClick={() => setSelectedCategoryId(section.type)}
+                className={`h-11 shrink-0 rounded-lg px-5 text-sm font-semibold transition ${
+                  selectedCategoryId === section.type
+                    ? "bg-brand-500 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-900 dark:text-gray-300"
+                }`}
+              >
+                {section.title}
+              </button>
+            ))}
             {categories.map((category) => (
               <button
                 key={category.id}
@@ -209,17 +315,25 @@ export default function ProductsCatalog({
           </label>
         </div>
 
-        <div className="mt-8 flex flex-wrap justify-center gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              hasConfirmedPurchase={hasConfirmedPurchase}
-              product={product}
-            />
-          ))}
-        </div>
+        {selectedCommerceSection ? (
+          <div className="mt-8 flex flex-wrap justify-center gap-6">
+            {filteredCommerceItems.map((item) => (
+              <CommerceCard key={item.id} item={item} />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-8 flex flex-wrap justify-center gap-6">
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                hasConfirmedPurchase={hasConfirmedPurchase}
+                product={product}
+              />
+            ))}
+          </div>
+        )}
 
-        {filteredProducts.length === 0 ? (
+        {filteredProducts.length === 0 && filteredCommerceItems.length === 0 ? (
           <p className="mt-14 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
             No hay productos disponibles con ese filtro.
           </p>
