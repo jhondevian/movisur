@@ -1,4 +1,5 @@
 import { requireAdminUser } from "@/lib/admin-auth";
+import { jsonSafe } from "@/lib/json";
 import { prisma } from "@/lib/prisma";
 import { mkdir, writeFile } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
@@ -266,7 +267,7 @@ export async function PATCH(
       });
     });
 
-    return NextResponse.json({ file: updated });
+    return NextResponse.json({ file: jsonSafe(updated) });
   } catch (error) {
     console.error("Update Movisur product file error", error);
     return NextResponse.json(
@@ -310,7 +311,7 @@ export async function DELETE(
   }
 
   if (currentFile.deletedAt) {
-    return NextResponse.json({ file: currentFile, reused: true });
+    return NextResponse.json({ file: jsonSafe(currentFile), reused: true });
   }
 
   const deleted = await prisma.movisurProductFile.update({
@@ -322,5 +323,5 @@ export async function DELETE(
     },
   });
 
-  return NextResponse.json({ file: deleted });
+  return NextResponse.json({ file: jsonSafe(deleted) });
 }

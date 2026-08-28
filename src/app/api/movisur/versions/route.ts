@@ -1,3 +1,4 @@
+import { jsonSafe } from "@/lib/json";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -41,5 +42,5 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ version });
+  return NextResponse.json({ version: jsonSafe(version) });
 }

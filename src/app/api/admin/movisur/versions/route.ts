@@ -1,4 +1,5 @@
 import { requireAdminUser } from "@/lib/admin-auth";
+import { jsonSafe } from "@/lib/json";
 import { prisma } from "@/lib/prisma";
 import { mkdir, writeFile } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
@@ -34,7 +35,7 @@ export async function GET() {
     orderBy: [{ createdAt: "desc" }],
   });
 
-  return NextResponse.json({ versions });
+  return NextResponse.json({ versions: jsonSafe(versions) });
 }
 
 export async function POST(request: NextRequest) {
@@ -83,7 +84,10 @@ export async function POST(request: NextRequest) {
   });
 
   if (existingUpload) {
-    return NextResponse.json({ version: existingUpload, reused: true });
+    return NextResponse.json({
+      version: jsonSafe(existingUpload),
+      reused: true,
+    });
   }
 
   if (!isValidValue(releaseTypes, releaseType)) {
@@ -170,7 +174,7 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    return NextResponse.json({ version: created }, { status: 201 });
+    return NextResponse.json({ version: jsonSafe(created) }, { status: 201 });
   } catch (error) {
     console.error("Create Movisur version error", error);
     return NextResponse.json(

@@ -1,4 +1,5 @@
 import { requireAdminUser } from "@/lib/admin-auth";
+import { jsonSafe } from "@/lib/json";
 import { prisma } from "@/lib/prisma";
 import { mkdir, writeFile } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
@@ -147,7 +148,7 @@ export async function PATCH(
       });
     });
 
-    return NextResponse.json({ version: updated });
+    return NextResponse.json({ version: jsonSafe(updated) });
   } catch (error) {
     console.error("Update Movisur version error", error);
     return NextResponse.json(

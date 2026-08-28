@@ -1,4 +1,5 @@
 import { requireAdminUser } from "@/lib/admin-auth";
+import { jsonSafe } from "@/lib/json";
 import { prisma } from "@/lib/prisma";
 import { mkdir, writeFile } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (existingUpload) {
-    return NextResponse.json({ file: existingUpload, reused: true });
+    return NextResponse.json({ file: jsonSafe(existingUpload), reused: true });
   }
 
   let finalDownloadUrl = downloadUrl;
@@ -240,7 +241,7 @@ export async function POST(request: NextRequest) {
       return productFile;
     });
 
-    return NextResponse.json({ file: created }, { status: 201 });
+    return NextResponse.json({ file: jsonSafe(created) }, { status: 201 });
   } catch (error) {
     console.error("Create Movisur product file error", error);
     return NextResponse.json(

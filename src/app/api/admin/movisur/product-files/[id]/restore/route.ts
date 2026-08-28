@@ -1,4 +1,5 @@
 import { requireAdminUser } from "@/lib/admin-auth";
+import { jsonSafe } from "@/lib/json";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -106,5 +107,5 @@ export async function PATCH(
     },
   });
 
-  return NextResponse.json({ file: restored });
+  return NextResponse.json({ file: jsonSafe(restored) });
 }
