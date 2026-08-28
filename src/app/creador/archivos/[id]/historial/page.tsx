@@ -82,6 +82,8 @@ export default async function CreadorArchivoHistorialPage({
         revisions={productFile.revisions.map((revision) => ({
           ...revision,
           createdAt: revision.createdAt.toISOString(),
+          fileSize:
+            revision.fileSize === null ? null : Number(revision.fileSize),
         }))}
       />
     </div>

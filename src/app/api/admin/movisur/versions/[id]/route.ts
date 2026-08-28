@@ -103,7 +103,7 @@ export async function PATCH(
 
     finalDownloadUrl = `/uploads/movisur/${storedName}`;
     fileName = file.name;
-    fileSize = file.size;
+    fileSize = BigInt(file.size);
     distribution = "file";
   } else if (downloadUrl) {
     finalDownloadUrl = downloadUrl;

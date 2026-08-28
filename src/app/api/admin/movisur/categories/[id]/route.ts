@@ -58,9 +58,16 @@ export async function PATCH(
   if (contentType.includes("application/json")) {
     const body = (await request.json().catch(() => null)) as {
       isActive?: boolean;
+      showInFrontend?: boolean;
+      showOnHome?: boolean;
     } | null;
 
-    if (!body || typeof body.isActive !== "boolean") {
+    if (
+      !body ||
+      (typeof body.isActive !== "boolean" &&
+        typeof body.showInFrontend !== "boolean" &&
+        typeof body.showOnHome !== "boolean")
+    ) {
       return NextResponse.json(
         { message: "Datos invalidos." },
         { status: 400 }
@@ -70,7 +77,15 @@ export async function PATCH(
     const category = await prisma.movisurBrandCategory.update({
       where: { id },
       data: {
-        isActive: body.isActive,
+        ...(typeof body.isActive === "boolean"
+          ? { isActive: body.isActive }
+          : {}),
+        ...(typeof body.showOnHome === "boolean"
+          ? { showOnHome: body.showOnHome }
+          : {}),
+        ...(typeof body.showInFrontend === "boolean"
+          ? { showInFrontend: body.showInFrontend }
+          : {}),
       },
     });
 
@@ -82,6 +97,8 @@ export async function PATCH(
   const categoryType = getString(formData, "categoryType");
   const description = getString(formData, "description");
   const sortOrder = Number(getString(formData, "sortOrder") || 0);
+  const showOnHome = formData.get("showOnHome") === "on";
+  const showInFrontend = formData.get("showInFrontend") === "on";
   const isActive = formData.get("isActive") === "on";
   const file = formData.get("image");
 
@@ -108,6 +125,8 @@ export async function PATCH(
           : "brand",
         description,
         sortOrder,
+        showOnHome,
+        showInFrontend,
         isActive,
         ...(imageUrl ? { imageUrl } : {}),
       },

@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
   let finalDownloadUrl = downloadUrl;
   let fileName: string | null = null;
-  let fileSize: number | null = null;
+  let fileSize: bigint | null = null;
   let distribution: "url" | "file" = "url";
 
   if (file instanceof File && file.size > 0) {
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     finalDownloadUrl = `/uploads/movisur/${storedName}`;
     fileName = file.name;
-    fileSize = file.size;
+    fileSize = BigInt(file.size);
     distribution = "file";
   }
 

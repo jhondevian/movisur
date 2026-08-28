@@ -82,7 +82,13 @@ export default async function CreadorArchivosPage() {
         ))}
       </div>
 
-      <MovisurProductFilesTable files={files} editBasePath="/creador/archivos" />
+      <MovisurProductFilesTable
+        files={files.map((file) => ({
+          ...file,
+          fileSize: file.fileSize === null ? null : Number(file.fileSize),
+        }))}
+        editBasePath="/creador/archivos"
+      />
     </div>
   );
 }

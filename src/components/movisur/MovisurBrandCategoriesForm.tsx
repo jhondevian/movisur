@@ -1,12 +1,15 @@
 "use client";
 
-import type { MovisurBrandCategory } from "@/generated/prisma/client";
+import type {
+  MovisurBrandCategory,
+  MovisurDeviceModel,
+} from "@/generated/prisma/client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 type MovisurBrandCategoriesFormProps = {
-  categories: MovisurBrandCategory[];
+  categories: (MovisurBrandCategory & { models: MovisurDeviceModel[] })[];
 };
 
 const categoryTypeOptions = [
@@ -92,6 +95,68 @@ export default function MovisurBrandCategoriesForm({
       return;
     }
 
+    router.refresh();
+  }
+
+  async function toggleCategoryHome(id: string, showOnHome: boolean) {
+    setMessage("");
+    const response = await fetch(`/api/admin/movisur/categories/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ showOnHome }),
+    });
+
+    if (!response.ok) {
+      setMessage("No se pudo actualizar la portada.");
+      return;
+    }
+
+    router.refresh();
+  }
+
+  async function toggleCategoryFrontend(id: string, showInFrontend: boolean) {
+    setMessage("");
+    const response = await fetch(`/api/admin/movisur/categories/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ showInFrontend }),
+    });
+
+    if (!response.ok) {
+      setMessage("No se pudo actualizar el frontend.");
+      return;
+    }
+
+    router.refresh();
+  }
+
+  async function handleModelSubmit(
+    event: FormEvent<HTMLFormElement>,
+    categoryId: string
+  ) {
+    event.preventDefault();
+    setMessage("");
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const response = await fetch(
+      `/api/admin/movisur/categories/${categoryId}/models`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as {
+        message?: string;
+      } | null;
+      setMessage(payload?.message ?? "No se pudo crear el modelo.");
+      return;
+    }
+
+    form.reset();
+    setMessage("Modelo creado.");
     router.refresh();
   }
 
@@ -181,6 +246,24 @@ export default function MovisurBrandCategoriesForm({
               className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
             />
             Activa
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <input
+              name="showOnHome"
+              type="checkbox"
+              defaultChecked
+              className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+            />
+            Portada
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <input
+              name="showInFrontend"
+              type="checkbox"
+              defaultChecked
+              className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+            />
+            Frontend
           </label>
           <button
             type="submit"
@@ -288,6 +371,24 @@ export default function MovisurBrandCategoriesForm({
                     />
                     Activa
                   </label>
+                  <label className="flex items-end gap-2 pb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <input
+                      name="showOnHome"
+                      type="checkbox"
+                      defaultChecked={category.showOnHome}
+                      className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                    />
+                    Portada
+                  </label>
+                  <label className="flex items-end gap-2 pb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <input
+                      name="showInFrontend"
+                      type="checkbox"
+                      defaultChecked={category.showInFrontend}
+                      className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                    />
+                    Frontend
+                  </label>
                 </div>
 
                 <label className="block">
@@ -353,18 +454,100 @@ export default function MovisurBrandCategoriesForm({
                   <span className="text-xs text-gray-400">
                     Orden {category.sortOrder}
                   </span>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <input
-                      type="checkbox"
-                      checked={category.isActive}
-                      onChange={(event) =>
-                        toggleCategory(category.id, event.target.checked)
-                      }
-                      className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                    />
-                    Activa
-                  </label>
+                  <div className="flex flex-wrap justify-end gap-3">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={category.showOnHome}
+                        onChange={(event) =>
+                          toggleCategoryHome(category.id, event.target.checked)
+                        }
+                        className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                      />
+                      Portada
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={category.showInFrontend}
+                        onChange={(event) =>
+                          toggleCategoryFrontend(
+                            category.id,
+                            event.target.checked
+                          )
+                        }
+                        className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                      />
+                      Frontend
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={category.isActive}
+                        onChange={(event) =>
+                          toggleCategory(category.id, event.target.checked)
+                        }
+                        className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                      />
+                      Activa
+                    </label>
+                  </div>
                 </div>
+                {category.categoryType === "brand" ? (
+                  <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+                    <div className="flex flex-wrap gap-2">
+                      {category.models.map((model) => (
+                        <span
+                          key={model.id}
+                          className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-950 dark:text-gray-300"
+                        >
+                          {model.name}
+                          {model.year ? ` ${model.year}` : ""}
+                        </span>
+                      ))}
+                    </div>
+                    <form
+                      onSubmit={(event) =>
+                        handleModelSubmit(event, category.id)
+                      }
+                      className="mt-3 grid gap-2"
+                    >
+                      <div className="grid gap-2 sm:grid-cols-[1fr_90px]">
+                        <input
+                          name="name"
+                          placeholder="Modelo"
+                          className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+                        />
+                        <input
+                          name="year"
+                          type="number"
+                          min="2000"
+                          max="2100"
+                          placeholder="Año"
+                          className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+                        />
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                        <input
+                          name="code"
+                          placeholder="Codigo"
+                          className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+                        />
+                        <input
+                          name="details"
+                          placeholder="Detalles"
+                          className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs text-gray-800 outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-950 dark:text-white/90"
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                ) : null}
                 <div className="mt-4 flex justify-end">
                   <button
                     type="button"

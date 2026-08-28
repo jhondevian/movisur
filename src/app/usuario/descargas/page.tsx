@@ -6,9 +6,10 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-function formatSize(bytes: number | null) {
+function formatSize(bytes: number | bigint | null) {
   if (!bytes) return "Archivo remoto";
-  const mb = bytes / 1024 / 1024;
+  const mb = Number(bytes) / 1024 / 1024;
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
   return `${mb.toFixed(1)} MB`;
 }
 

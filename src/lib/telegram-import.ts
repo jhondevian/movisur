@@ -91,7 +91,8 @@ async function downloadTelegramFile({
   return {
     downloadUrl: `/uploads/movisur/products/telegram/${storedName}`,
     distribution: "file" as const,
-    fileSize: fileInfo.file_size ?? null,
+    fileSize:
+      fileInfo.file_size === undefined ? null : BigInt(fileInfo.file_size),
     storedName,
   };
 }
@@ -120,7 +121,8 @@ async function getTelegramDownloadReference({
     return {
       distribution: "url" as const,
       downloadUrl: `telegram:${fileId}`,
-      fileSize: fileInfo.file_size ?? null,
+      fileSize:
+        fileInfo.file_size === undefined ? null : BigInt(fileInfo.file_size),
       storedName: fileName,
     };
   }

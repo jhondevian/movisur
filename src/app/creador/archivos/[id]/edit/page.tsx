@@ -61,6 +61,17 @@ export default async function EditCreadorArchivoPage({
       select: {
         id: true,
         name: true,
+        models: {
+          where: { isActive: true },
+          orderBy: [{ sortOrder: "asc" }, { year: "desc" }, { name: "asc" }],
+          select: {
+            id: true,
+            categoryId: true,
+            name: true,
+            code: true,
+            year: true,
+          },
+        },
       },
     }),
   ]);
@@ -89,7 +100,26 @@ export default async function EditCreadorArchivoPage({
 
       <MovisurProductFileForm
         categories={categories}
-        initialFile={file}
+        initialFile={{
+          id: file.id,
+          name: file.name,
+          categoryId: file.categoryId,
+          deviceModelId: file.deviceModelId,
+          description: file.description,
+          imageUrl: file.imageUrl,
+          distribution: file.distribution,
+          downloadUrl: file.downloadUrl,
+          fileType: file.fileType,
+          isActive: file.isActive,
+          isForSale: file.isForSale,
+          sortOrder: file.sortOrder,
+          createdById: file.createdById,
+          firmwareYear: file.firmwareYear,
+          firmwareRegion: file.firmwareRegion,
+          firmwareBuild: file.firmwareBuild,
+          androidVersion: file.androidVersion,
+          binaryVersion: file.binaryVersion,
+        }}
         returnPath="/creador/archivos"
       />
 
@@ -115,6 +145,8 @@ export default async function EditCreadorArchivoPage({
           revisions={file.revisions.map((revision) => ({
             ...revision,
             createdAt: revision.createdAt.toISOString(),
+            fileSize:
+              revision.fileSize === null ? null : Number(revision.fileSize),
           }))}
         />
       </div>

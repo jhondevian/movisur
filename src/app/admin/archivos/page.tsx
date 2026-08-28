@@ -121,7 +121,10 @@ export default async function AdminArchivosPage({
       </div>
 
       <MovisurProductFilesTable
-        files={files}
+        files={files.map((file) => ({
+          ...file,
+          fileSize: file.fileSize === null ? null : Number(file.fileSize),
+        }))}
         editBasePath="/admin/archivos"
         showOwner
       />

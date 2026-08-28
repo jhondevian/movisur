@@ -85,6 +85,11 @@ export default async function MovisurConfiguracionPage() {
   const [categories, licenseProducts, rentalTools] = await Promise.all([
     prisma.movisurBrandCategory.findMany({
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      include: {
+        models: {
+          orderBy: [{ sortOrder: "asc" }, { year: "desc" }, { name: "asc" }],
+        },
+      },
     }),
     prisma.creatorLicenseProduct.findMany({
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],

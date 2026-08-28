@@ -14,9 +14,11 @@ export const metadata: Metadata = {
   description: "Recupera archivos enviados al basurero desde el panel creador",
 };
 
-function formatSize(bytes: number | null) {
+function formatSize(bytes: number | bigint | null) {
   if (!bytes) return "Remoto";
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  const mb = Number(bytes) / 1024 / 1024;
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+  return `${mb.toFixed(1)} MB`;
 }
 
 function formatDate(date: Date | null) {

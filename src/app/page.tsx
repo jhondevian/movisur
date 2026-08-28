@@ -35,7 +35,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   const [brandCategories, productFiles, licenseProducts, rentalTools] = await Promise.all([
     prisma.movisurBrandCategory.findMany({
-      where: { isActive: true, categoryType: "brand" },
+      where: { isActive: true, categoryType: "brand", showOnHome: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       select: {
         id: true,
@@ -44,7 +44,19 @@ export default async function Home({ searchParams }: HomeProps) {
       },
     }),
     prisma.movisurProductFile.findMany({
-      where: { isActive: true, deletedAt: null },
+      where: {
+        isActive: true,
+        deletedAt: null,
+        OR: [
+          { categoryId: null },
+          {
+            category: {
+              isActive: true,
+              showInFrontend: true,
+            },
+          },
+        ],
+      },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       select: {
         id: true,
@@ -136,6 +148,7 @@ export default async function Home({ searchParams }: HomeProps) {
           where: {
             id: { in: [...fileCategoryIds] },
             isActive: true,
+            showInFrontend: true,
           },
           orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
           select: {

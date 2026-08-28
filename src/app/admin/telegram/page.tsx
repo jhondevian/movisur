@@ -70,7 +70,7 @@ export default async function AdminTelegramPage() {
           fileKind: file.fileKind,
           fileMimeType: file.fileMimeType,
           fileName: file.fileName,
-          fileSize: file.fileSize,
+          fileSize: file.fileSize === null ? null : Number(file.fileSize),
           id: file.id,
           importedFileId: file.importedFileId,
           receivedAt: file.receivedAt.toISOString(),

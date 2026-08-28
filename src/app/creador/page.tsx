@@ -17,9 +17,11 @@ type PaymentMetadata = {
   purchaseStatus?: string;
 };
 
-function formatSize(bytes: number) {
+function formatSize(bytes: number | bigint) {
   if (bytes <= 0) return "0 MB";
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  const mb = Number(bytes) / 1024 / 1024;
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+  return `${mb.toFixed(1)} MB`;
 }
 
 function formatDate(date: Date) {
@@ -138,7 +140,7 @@ export default async function CreadorPage() {
 
   const totalDownloads = files.reduce((total, file) => total + file.downloads, 0);
   const totalStorage = files.reduce(
-    (total, file) => total + (file.fileSize || 0),
+    (total, file) => total + Number(file.fileSize || 0),
     0
   );
   const activeFiles = files.filter((file) => file.isActive).length;

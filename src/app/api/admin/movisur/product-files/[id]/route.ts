@@ -51,7 +51,7 @@ async function saveUploadedProductFile(file: File, fileType: string) {
   return {
     downloadUrl: `/uploads/movisur/products/${storedName}`,
     fileName: file.name,
-    fileSize: file.size,
+    fileSize: BigInt(file.size),
     fileMimeType: file.type || null,
     distribution: "file" as const,
   };
@@ -118,9 +118,15 @@ export async function PATCH(
   const formData = await request.formData();
   const name = getString(formData, "name");
   const categoryId = getString(formData, "categoryId");
+  const deviceModelId = getString(formData, "deviceModelId");
   const description = getString(formData, "description");
   const downloadUrl = getString(formData, "downloadUrl");
   const createdById = getString(formData, "createdById");
+  const firmwareYearValue = Number.parseInt(getString(formData, "firmwareYear"), 10);
+  const firmwareRegion = getString(formData, "firmwareRegion");
+  const firmwareBuild = getString(formData, "firmwareBuild");
+  const androidVersion = getString(formData, "androidVersion");
+  const binaryVersion = getString(formData, "binaryVersion");
   const fileType = normalizeFileType(getString(formData, "fileType"));
   const file = formData.get("file");
   const image = formData.get("image");
@@ -230,6 +236,7 @@ export async function PATCH(
         data: {
           name,
           categoryId: categoryId || null,
+          deviceModelId: deviceModelId || null,
           description,
           imageUrl,
           distribution,
@@ -238,6 +245,13 @@ export async function PATCH(
           fileMimeType,
           fileName,
           fileSize,
+          firmwareYear: Number.isFinite(firmwareYearValue)
+            ? firmwareYearValue
+            : null,
+          firmwareRegion: firmwareRegion || null,
+          firmwareBuild: firmwareBuild || null,
+          androidVersion: androidVersion || null,
+          binaryVersion: binaryVersion || null,
           isActive,
           isForSale,
           sortOrder,

@@ -2,6 +2,7 @@
 
 import type {
   MovisurBrandCategory,
+  MovisurDeviceModel,
   MovisurProductFile,
 } from "@/generated/prisma/client";
 import { useRouter } from "next/navigation";
@@ -12,6 +13,7 @@ type ProductFileFormData = Pick<
   | "id"
   | "name"
   | "categoryId"
+  | "deviceModelId"
   | "description"
   | "imageUrl"
   | "distribution"
@@ -21,10 +23,20 @@ type ProductFileFormData = Pick<
   | "isForSale"
   | "sortOrder"
   | "createdById"
+  | "firmwareYear"
+  | "firmwareRegion"
+  | "firmwareBuild"
+  | "androidVersion"
+  | "binaryVersion"
 >;
 
 type MovisurProductFileFormProps = {
-  categories: Pick<MovisurBrandCategory, "id" | "name">[];
+  categories: (Pick<MovisurBrandCategory, "id" | "name"> & {
+    models: Pick<
+      MovisurDeviceModel,
+      "id" | "categoryId" | "name" | "code" | "year"
+    >[];
+  })[];
   initialFile?: ProductFileFormData;
   owners?: {
     email: string;
@@ -83,9 +95,15 @@ export default function MovisurProductFileForm({
   );
   const [error, setError] = useState("");
   const [previewUrl, setPreviewUrl] = useState(initialFile?.imageUrl ?? "");
+  const [selectedCategoryId, setSelectedCategoryId] = useState(
+    initialFile?.categoryId ?? ""
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
   const uploadKey = useMemo(() => crypto.randomUUID(), []);
+  const selectedCategory = categories.find(
+    (category) => category.id === selectedCategoryId
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -184,6 +202,7 @@ export default function MovisurProductFileForm({
           <select
             name="categoryId"
             defaultValue={initialFile?.categoryId ?? ""}
+            onChange={(event) => setSelectedCategoryId(event.target.value)}
             className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
           >
             <option value="">Sin categoria</option>
@@ -193,6 +212,90 @@ export default function MovisurProductFileForm({
               </option>
             ))}
           </select>
+        </label>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Modelo
+          </span>
+          <select
+            name="deviceModelId"
+            defaultValue={initialFile?.deviceModelId ?? ""}
+            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          >
+            <option value="">Sin modelo</option>
+            {(selectedCategory?.models ?? []).map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.name}
+                {model.code ? ` - ${model.code}` : ""}
+                {model.year ? ` - ${model.year}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Año
+          </span>
+          <input
+            name="firmwareYear"
+            type="number"
+            min="2000"
+            max="2100"
+            defaultValue={initialFile?.firmwareYear ?? ""}
+            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Región
+          </span>
+          <input
+            name="firmwareRegion"
+            defaultValue={initialFile?.firmwareRegion ?? ""}
+            placeholder="ZTO, TPA, EUX"
+            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Build
+          </span>
+          <input
+            name="firmwareBuild"
+            defaultValue={initialFile?.firmwareBuild ?? ""}
+            placeholder="A546EXX..."
+            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Android
+          </span>
+          <input
+            name="androidVersion"
+            defaultValue={initialFile?.androidVersion ?? ""}
+            placeholder="14"
+            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Binario
+          </span>
+          <input
+            name="binaryVersion"
+            defaultValue={initialFile?.binaryVersion ?? ""}
+            placeholder="U8, BIT 8"
+            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs outline-hidden focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          />
         </label>
       </div>
 

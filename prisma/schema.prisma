@@ -112,7 +112,7 @@ model MovisurVersion {
   downloadUrl   String              @map("download_url")
   uploadKey     String?             @unique @map("upload_key") @db.VarChar(80)
   fileName      String?             @map("file_name") @db.VarChar(255)
-  fileSize      Int?                @map("file_size")
+  fileSize      BigInt?             @map("file_size")
   changelog     String?
   downloads     Int                 @default(0)
   forceUpdate   Boolean             @default(false) @map("force_update")
@@ -201,15 +201,37 @@ model MovisurBrandCategory {
   description String?
   imageUrl    String?  @map("image_url") @db.VarChar(255)
   categoryType String  @default("brand") @map("category_type") @db.VarChar(40)
+  showOnHome  Boolean  @default(true) @map("show_on_home")
+  showInFrontend Boolean @default(true) @map("show_in_frontend")
   isActive    Boolean  @default(true) @map("is_active")
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   productFiles MovisurProductFile[]
+  models      MovisurDeviceModel[]
 
   @@index([categoryType, isActive, sortOrder], map: "movisur_brand_categories_type_public_idx")
   @@index([isActive, sortOrder], map: "movisur_brand_categories_public_idx")
   @@map("movisur_brand_categories")
+}
+
+model MovisurDeviceModel {
+  id          String   @id @default(uuid()) @db.Uuid
+  categoryId  String   @map("category_id") @db.Uuid
+  name        String   @db.VarChar(140)
+  code        String?  @db.VarChar(80)
+  year        Int?
+  details     String?
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  category    MovisurBrandCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productFiles MovisurProductFile[]
+
+  @@unique([categoryId, name, year], map: "movisur_device_models_category_name_year_key")
+  @@index([categoryId, isActive, sortOrder], map: "movisur_device_models_category_idx")
+  @@map("movisur_device_models")
 }
 
 model CreatorLicenseProduct {
@@ -379,6 +401,7 @@ model MovisurProductFile {
   name         String                @db.VarChar(140)
   slug         String                @unique @db.VarChar(160)
   categoryId   String?               @map("category_id") @db.Uuid
+  deviceModelId String?              @map("device_model_id") @db.Uuid
   description  String?
   imageUrl     String?               @map("image_url") @db.VarChar(255)
   distribution VersionDistribution   @default(url)
@@ -388,7 +411,12 @@ model MovisurProductFile {
   fileType     String                @default("zip") @map("file_type") @db.VarChar(20)
   fileMimeType String?               @map("file_mime_type") @db.VarChar(120)
   fileName     String?               @map("file_name") @db.VarChar(255)
-  fileSize     Int?                  @map("file_size")
+  fileSize     BigInt?               @map("file_size")
+  firmwareYear Int?                  @map("firmware_year")
+  firmwareRegion String?             @map("firmware_region") @db.VarChar(40)
+  firmwareBuild String?              @map("firmware_build") @db.VarChar(80)
+  androidVersion String?             @map("android_version") @db.VarChar(40)
+  binaryVersion String?              @map("binary_version") @db.VarChar(40)
   downloads    Int                   @default(0)
   isActive     Boolean               @default(true) @map("is_active")
   isForSale    Boolean               @default(false) @map("is_for_sale")
@@ -399,12 +427,14 @@ model MovisurProductFile {
   updatedAt    DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
   creator      User?                 @relation(fields: [createdById], references: [id], onDelete: SetNull)
   category     MovisurBrandCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  deviceModel  MovisurDeviceModel?   @relation(fields: [deviceModelId], references: [id], onDelete: SetNull)
   revisions    MovisurProductFileRevision[]
   reviews      MovisurProductFileReview[]
   userDownloads MovisurProductFileDownload[]
 
   @@index([isActive, isForSale, sortOrder], map: "movisur_product_files_public_idx")
   @@index([categoryId], map: "movisur_product_files_category_idx")
+  @@index([deviceModelId], map: "movisur_product_files_device_model_idx")
   @@index([createdById], map: "movisur_product_files_creator_idx")
   @@index([createdById, deletedAt], map: "movisur_product_files_trash_idx")
   @@map("movisur_product_files")
@@ -469,7 +499,7 @@ model MovisurProductFileRevision {
   fileType      String              @default("zip") @map("file_type") @db.VarChar(20)
   fileMimeType  String?             @map("file_mime_type") @db.VarChar(120)
   fileName      String?             @map("file_name") @db.VarChar(255)
-  fileSize      Int?                @map("file_size")
+  fileSize      BigInt?             @map("file_size")
   isCurrent     Boolean             @default(false) @map("is_current")
   createdById   String?             @map("created_by_id") @db.Uuid
   createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -523,7 +553,7 @@ model TelegramFile {
   fileUniqueId   String    @map("file_unique_id") @db.VarChar(180)
   fileName       String?   @map("file_name") @db.VarChar(255)
   fileMimeType   String?   @map("file_mime_type") @db.VarChar(120)
-  fileSize       Int?      @map("file_size")
+  fileSize       BigInt?   @map("file_size")
   fileKind       String    @default("document") @map("file_kind") @db.VarChar(40)
   caption        String?
   status         String    @default("pending") @db.VarChar(40)

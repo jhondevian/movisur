@@ -1,12 +1,34 @@
 "use client";
 
 import Badge from "@/components/ui/badge/Badge";
-import type { MovisurProductFile } from "@/generated/prisma/client";
+import type { VersionDistribution } from "@/generated/prisma/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-type ProductFileWithCategory = MovisurProductFile & {
+type ProductFileWithCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  categoryId: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  distribution: VersionDistribution;
+  downloadUrl: string;
+  uploadKey: string | null;
+  createdById: string | null;
+  fileType: string;
+  fileMimeType: string | null;
+  fileName: string | null;
+  fileSize: number | null;
+  downloads: number;
+  isActive: boolean;
+  isForSale: boolean;
+  sortOrder: number;
+  deletedAt: Date | null;
+  deletedById: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   category: { name: string } | null;
   creator?: {
     firstName: string;
@@ -24,10 +46,12 @@ type MovisurProductFilesTableProps = {
 
 function formatSize(bytes: number | null) {
   if (!bytes) return "-";
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  const mb = bytes / 1024 / 1024;
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+  return `${mb.toFixed(1)} MB`;
 }
 
-function getFileTypeLabel(file: MovisurProductFile) {
+function getFileTypeLabel(file: ProductFileWithCategory) {
   if (file.fileType === "video") return "Video";
   if (file.fileType === "file") return "Archivo";
   if (file.fileType === "zip") return "ZIP";

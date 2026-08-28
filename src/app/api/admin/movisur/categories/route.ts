@@ -64,6 +64,8 @@ export async function POST(request: NextRequest) {
   const categoryType = getString(formData, "categoryType");
   const description = getString(formData, "description");
   const sortOrder = Number(getString(formData, "sortOrder") || 0);
+  const showOnHome = formData.get("showOnHome") === "on";
+  const showInFrontend = formData.get("showInFrontend") === "on";
   const isActive = formData.get("isActive") === "on";
   const file = formData.get("image");
 
@@ -99,6 +101,8 @@ export async function POST(request: NextRequest) {
           : "brand",
         description,
         imageUrl,
+        showOnHome,
+        showInFrontend,
         isActive,
         sortOrder,
       },

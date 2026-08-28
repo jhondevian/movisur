@@ -94,7 +94,10 @@ export async function POST(request: NextRequest) {
       caption: message.caption || null,
       fileId: selected.file.file_id,
       fileName: selected.file.file_name || null,
-      fileSize: selected.file.file_size || null,
+      fileSize:
+        selected.file.file_size === undefined
+          ? null
+          : BigInt(selected.file.file_size),
       fileMimeType: selected.file.mime_type || null,
     },
     create: {
@@ -104,7 +107,10 @@ export async function POST(request: NextRequest) {
       fileId: selected.file.file_id,
       fileKind: selected.kind,
       fileName: selected.file.file_name || null,
-      fileSize: selected.file.file_size || null,
+      fileSize:
+        selected.file.file_size === undefined
+          ? null
+          : BigInt(selected.file.file_size),
       fileMimeType: selected.file.mime_type || null,
       fileUniqueId: selected.file.file_unique_id,
       messageId: message.message_id,

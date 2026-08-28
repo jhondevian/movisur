@@ -16,6 +16,17 @@ export default async function NewCreadorArchivoPage() {
     select: {
       id: true,
       name: true,
+      models: {
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { year: "desc" }, { name: "asc" }],
+        select: {
+          id: true,
+          categoryId: true,
+          name: true,
+          code: true,
+          year: true,
+        },
+      },
     },
   });
 
