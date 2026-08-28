@@ -1,7 +1,7 @@
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { getTemporaryTelegramDownloadUrl } from "@/lib/telegram-api";
+import { fetchTemporaryTelegramFile } from "@/lib/telegram-api";
 import { getTelegramBotToken } from "@/lib/telegram-settings";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -23,8 +23,25 @@ function redirectTo(location: string) {
   });
 }
 
-async function resolveDownloadUrl(downloadUrl: string) {
-  if (!downloadUrl.startsWith("telegram:")) return downloadUrl;
+function streamTelegramResponse(response: Response, fileName?: string | null) {
+  const headers = new Headers();
+  const contentType = response.headers.get("content-type");
+  const contentLength = response.headers.get("content-length");
+
+  if (contentType) headers.set("Content-Type", contentType);
+  if (contentLength) headers.set("Content-Length", contentLength);
+  if (fileName) {
+    headers.set(
+      "Content-Disposition",
+      `attachment; filename="${fileName.replace(/"/g, "")}"`
+    );
+  }
+
+  return new NextResponse(response.body, { headers });
+}
+
+async function resolveDownloadResponse(downloadUrl: string, fileName?: string | null) {
+  if (!downloadUrl.startsWith("telegram:")) return redirectTo(downloadUrl);
 
   const fileId = downloadUrl.slice("telegram:".length);
   const token = await getTelegramBotToken();
@@ -33,7 +50,10 @@ async function resolveDownloadUrl(downloadUrl: string) {
     throw new Error("No se pudo generar el enlace temporal de Telegram.");
   }
 
-  return getTemporaryTelegramDownloadUrl(token, fileId);
+  return streamTelegramResponse(
+    await fetchTemporaryTelegramFile(token, fileId),
+    fileName
+  );
 }
 
 async function getAuthUserId() {
@@ -170,7 +190,7 @@ export async function GET(
   });
 
   try {
-    return redirectTo(await resolveDownloadUrl(revision.downloadUrl));
+    return await resolveDownloadResponse(revision.downloadUrl, revision.fileName);
   } catch {
     return redirectTo("/?archivo=no-disponible");
   }

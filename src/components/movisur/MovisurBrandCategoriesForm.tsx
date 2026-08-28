@@ -493,8 +493,7 @@ export default function MovisurBrandCategoriesForm({
                     </label>
                   </div>
                 </div>
-                {category.categoryType === "brand" ? (
-                  <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+                <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-800">
                     <div className="flex flex-wrap gap-2">
                       {category.models.map((model) => (
                         <span
@@ -546,8 +545,7 @@ export default function MovisurBrandCategoriesForm({
                         </button>
                       </div>
                     </form>
-                  </div>
-                ) : null}
+                </div>
                 <div className="mt-4 flex justify-end">
                   <button
                     type="button"

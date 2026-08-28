@@ -137,27 +137,18 @@ export default async function Home({ searchParams }: HomeProps) {
       },
     }),
   ]);
-  const fileCategoryIds = new Set(
-    productFiles
-      .map((file) => file.categoryId)
-      .filter((categoryId): categoryId is string => Boolean(categoryId))
-  );
-  const fileCategories =
-    fileCategoryIds.size > 0
-      ? await prisma.movisurBrandCategory.findMany({
-          where: {
-            id: { in: [...fileCategoryIds] },
-            isActive: true,
-            showInFrontend: true,
-          },
-          orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-          select: {
-            id: true,
-            name: true,
-            imageUrl: true,
-          },
-        })
-      : [];
+  const fileCategories = await prisma.movisurBrandCategory.findMany({
+    where: {
+      isActive: true,
+      showInFrontend: true,
+    },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    select: {
+      id: true,
+      name: true,
+      imageUrl: true,
+    },
+  });
   const confirmedPurchase = userId
     ? await prisma.adminNotification.findFirst({
         where: {

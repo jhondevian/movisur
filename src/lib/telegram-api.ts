@@ -103,3 +103,14 @@ export async function getTemporaryTelegramDownloadUrl(
 
   return getTelegramFileDownloadUrl(token, fileInfo.file_path);
 }
+
+export async function fetchTemporaryTelegramFile(token: string, fileId: string) {
+  const downloadUrl = await getTemporaryTelegramDownloadUrl(token, fileId);
+  const response = await fetch(downloadUrl, { cache: "no-store" });
+
+  if (!response.ok || !response.body) {
+    throw new Error("No se pudo abrir el archivo temporal de Telegram.");
+  }
+
+  return response;
+}

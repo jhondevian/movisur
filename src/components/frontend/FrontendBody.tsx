@@ -41,6 +41,24 @@ type CreatorCommerceSection = {
   items: CreatorCommerceItem[];
 };
 
+function FileFallbackIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-14 w-14 text-brand-500"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.7"
+    >
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6" />
+      <path d="M9 17h4" />
+    </svg>
+  );
+}
+
 type FrontendBodyProps = {
   brandCategories: FrontendCategory[];
   creatorCommerceSections: CreatorCommerceSection[];
@@ -325,18 +343,20 @@ export default function FrontendBody({
           {filteredProducts.map((product) => (
             <article
               key={product.id}
-              className="flex min-h-[350px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950"
+              className="flex min-h-[360px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950"
             >
               <Link
                 href={product.productUrl}
-                className="flex min-h-14 items-start justify-center text-xl font-bold leading-snug text-gray-950 transition hover:text-brand-500 dark:text-white dark:hover:text-brand-400"
+                className="flex min-h-[84px] w-full max-w-[180px] items-start justify-center text-xl font-bold leading-snug text-gray-950 transition hover:text-brand-500 dark:text-white dark:hover:text-brand-400"
               >
-                {product.title}
+                <span className="line-clamp-3 break-words">
+                  {product.title}
+                </span>
               </Link>
 
               <Link
                 href={product.productUrl}
-                className="relative mt-5 flex h-24 w-full items-center justify-center"
+                className="relative mt-4 flex h-24 w-full max-w-[180px] items-center justify-center"
               >
                 {product.imageUrl ? (
                   <Image
@@ -347,15 +367,15 @@ export default function FrontendBody({
                     className="object-contain transition duration-200 hover:scale-105"
                   />
                 ) : (
-                  <span className="text-3xl font-extrabold text-gray-950 dark:text-white">
-                    {product.title.slice(0, 2).toUpperCase()}
+                  <span className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-500/10">
+                    <FileFallbackIcon />
                   </span>
                 )}
               </Link>
 
               {product.text ? (
-                <div className="mt-6 min-h-[76px]">
-                  <p className="line-clamp-4 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                <div className="mt-6 min-h-[96px] w-full max-w-[180px]">
+                  <p className="line-clamp-4 break-words text-sm leading-6 text-gray-600 dark:text-gray-400">
                     {product.text}{" "}
                     <button
                       type="button"
@@ -366,7 +386,7 @@ export default function FrontendBody({
                   </p>
                 </div>
               ) : (
-                <div className="min-h-[76px]" />
+                <div className="min-h-[96px] w-full max-w-[180px]" />
               )}
 
               <a
