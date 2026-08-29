@@ -107,7 +107,9 @@ export default function CreatorCommerceBuyBox({
     }
 
     setProofs((current) => ({ ...current, [key]: null }));
-    setMessage("Pago enviado con comprobante. El creador recibira tu orden.");
+    setMessage("Pago enviado con comprobante. Te llevamos a tus compras.");
+    router.push("/usuario/compras");
+    router.refresh();
   }
 
   async function rateVendor(offer: Offer, rating: number) {

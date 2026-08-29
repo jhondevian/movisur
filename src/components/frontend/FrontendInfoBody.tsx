@@ -199,7 +199,9 @@ export default function FrontendInfoBody() {
     }
 
     setPaymentProof(null);
-    setPaymentMessage("Pago enviado con comprobante. El admin recibira una notificacion.");
+    setPaymentMessage("Pago enviado con comprobante. Te llevamos a tus compras.");
+    router.push("/usuario/compras");
+    router.refresh();
   }
 
   return (
