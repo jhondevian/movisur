@@ -42,6 +42,11 @@ const adminNavItems: NavItem[] = [
     path: "/admin/movisur/configuracion",
   },
   {
+    icon: <BoxCubeIcon />,
+    name: "APK App",
+    path: "/admin/apk",
+  },
+  {
     icon: <TableIcon />,
     name: "Compras",
     path: "/admin/compras",

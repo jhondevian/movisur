@@ -185,7 +185,7 @@ export default function CreatorCommerceBuyBox({
                     offer.sellerName.slice(0, 1).toUpperCase()
                   )}
                 </div>
-                <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate text-xl font-bold text-gray-950 dark:text-white">
                       {offer.sellerName || "Creador Movisur"}
@@ -224,13 +224,13 @@ export default function CreatorCommerceBuyBox({
                       ) : null}
                     </div>
                   </div>
-                  <div className="min-w-0 text-left sm:text-right">
-                    <p className="break-words text-sm font-semibold text-gray-600 dark:text-gray-300">
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">
                       {[offer.planName, offer.durationLabel]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
-                    <p className="mt-1 text-3xl font-extrabold text-gray-950 dark:text-white">
+                    <p className="mt-1 whitespace-nowrap text-3xl font-extrabold text-gray-950 dark:text-white">
                       {offer.currency} {offer.price}
                     </p>
                   </div>

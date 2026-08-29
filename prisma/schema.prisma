@@ -59,6 +59,7 @@ model User {
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
   lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz(6)
   productFiles  MovisurProductFile[]
+  appReleases MovisurAppRelease[]
   productFileRevisions MovisurProductFileRevision[]
   productFileReviews MovisurProductFileReview[]
   productFileDownloads MovisurProductFileDownload[]
@@ -124,6 +125,34 @@ model MovisurVersion {
   @@unique([platform, buildNumber], map: "movisur_versions_platform_build_key")
   @@index([platform, isActive, createdAt], map: "movisur_versions_public_idx")
   @@map("movisur_versions")
+}
+
+model MovisurAppRelease {
+  id              String              @id @default(uuid()) @db.Uuid
+  version         String              @db.VarChar(40)
+  buildNumber     Int                 @map("build_number")
+  platform        VersionPlatform     @default(android)
+  releaseType     VersionReleaseType  @default(stable) @map("release_type")
+  distribution    VersionDistribution @default(url)
+  downloadUrl     String              @map("download_url")
+  uploadKey       String?             @unique @map("upload_key") @db.VarChar(80)
+  fileName        String?             @map("file_name") @db.VarChar(255)
+  fileSize        BigInt?             @map("file_size")
+  changelog       String?
+  downloads       Int                 @default(0)
+  forceUpdate     Boolean             @default(false) @map("force_update")
+  isActive        Boolean             @default(true) @map("is_active")
+  showForUsers    Boolean             @default(true) @map("show_for_users")
+  showForCreators Boolean             @default(true) @map("show_for_creators")
+  createdById     String?             @map("created_by_id") @db.Uuid
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy       User?               @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([platform, buildNumber], map: "movisur_app_releases_platform_build_key")
+  @@index([platform, isActive, showForUsers, showForCreators, buildNumber], map: "movisur_app_releases_public_idx")
+  @@index([createdById], map: "movisur_app_releases_creator_idx")
+  @@map("movisur_app_releases")
 }
 
 model MovisurSaleSettings {
