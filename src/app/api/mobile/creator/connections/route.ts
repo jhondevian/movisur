@@ -26,99 +26,95 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
   }
 
-  const [licenseAccounts, rentalAccounts] = await Promise.all([
-    prisma.creatorLicenseAccount.findMany({
+  const [licenseOffers, rentalOffers] = await Promise.all([
+    prisma.creatorLicenseOffer.findMany({
       where: { creatorId: user.id },
-      orderBy: [{ assignedAt: "desc" }, { createdAt: "desc" }],
-      take: 100,
-      select: {
-        id: true,
-        username: true,
-        password: true,
-        note: true,
-        isActive: true,
-        assignedAt: true,
-        assignedExpiresAt: true,
-        assignedTo: {
-          select: { firstName: true, lastName: true, email: true },
-        },
-        offer: {
-          select: {
-            product: { select: { name: true } },
-            plan: { select: { name: true, durationMonths: true } },
-          },
+      orderBy: { updatedAt: "desc" },
+      include: {
+        product: { select: { id: true, name: true, imageUrl: true } },
+        plan: { select: { id: true, name: true, durationMonths: true } },
+        accounts: {
+          orderBy: [{ assignedAt: "desc" }, { createdAt: "desc" }],
+          include: { assignedTo: { select: { firstName: true, lastName: true, email: true } } },
         },
       },
     }),
-    prisma.creatorRentalAccount.findMany({
+    prisma.creatorRentalOffer.findMany({
       where: { creatorId: user.id },
-      orderBy: [{ assignedAt: "desc" }, { createdAt: "desc" }],
-      take: 100,
-      select: {
-        id: true,
-        username: true,
-        password: true,
-        note: true,
-        isActive: true,
-        assignedAt: true,
-        assignedExpiresAt: true,
-        assignedTo: {
-          select: { firstName: true, lastName: true, email: true },
-        },
-        offer: {
-          select: {
-            tool: { select: { name: true } },
-            plan: { select: { name: true, durationMonths: true } },
-          },
+      orderBy: { updatedAt: "desc" },
+      include: {
+        tool: { select: { id: true, name: true, imageUrl: true } },
+        plan: { select: { id: true, name: true, durationMonths: true } },
+        accounts: {
+          orderBy: [{ assignedAt: "desc" }, { createdAt: "desc" }],
+          include: { assignedTo: { select: { firstName: true, lastName: true, email: true } } },
         },
       },
     }),
   ]);
 
-  const connections = [
-    ...licenseAccounts.map((account) => ({
-      id: account.id,
+  const groups = [
+    ...licenseOffers.map((offer) => ({
+      id: offer.id,
       type: "license",
-      itemName: account.offer.product.name,
-      planName: account.offer.plan.name,
-      durationLabel: `${account.offer.plan.durationMonths} mes${
-        account.offer.plan.durationMonths === 1 ? "" : "es"
+      itemId: offer.product.id,
+      itemName: offer.product.name,
+      imageUrl: offer.product.imageUrl,
+      planId: offer.plan.id,
+      planName: offer.plan.name,
+      durationLabel: `${offer.plan.durationMonths} mes${
+        offer.plan.durationMonths === 1 ? "" : "es"
       }`,
-      username: account.username,
-      password: account.password,
-      note: account.note,
-      isActive: account.isActive,
-      assignedToName: account.assignedTo
-        ? `${account.assignedTo.firstName} ${account.assignedTo.lastName}`.trim()
-        : null,
-      assignedToEmail: account.assignedTo?.email ?? null,
-      assignedAt: account.assignedAt?.toISOString() ?? null,
-      expiresAt: account.assignedExpiresAt?.toISOString() ?? null,
-      remaining: remainingText(account.assignedExpiresAt),
-      status: account.assignedTo ? "assigned" : "available",
+      accountCount: offer.accounts.length,
+      availableCount: offer.accounts.filter((account) => !account.assignedToId).length,
+      assignedCount: offer.accounts.filter((account) => account.assignedToId).length,
+      accounts: offer.accounts.map((account) => ({
+        id: account.id,
+        username: account.username,
+        password: account.password,
+        note: account.note,
+        isActive: account.isActive,
+        assignedToName: account.assignedTo
+          ? `${account.assignedTo.firstName} ${account.assignedTo.lastName}`.trim()
+          : null,
+        assignedToEmail: account.assignedTo?.email ?? null,
+        assignedAt: account.assignedAt?.toISOString() ?? null,
+        expiresAt: account.assignedExpiresAt?.toISOString() ?? null,
+        remaining: remainingText(account.assignedExpiresAt),
+        status: account.assignedTo ? "assigned" : "available",
+      })),
     })),
-    ...rentalAccounts.map((account) => ({
-      id: account.id,
+    ...rentalOffers.map((offer) => ({
+      id: offer.id,
       type: "rental",
-      itemName: account.offer.tool.name,
-      planName: account.offer.plan.name,
-      durationLabel: `${account.offer.plan.durationMonths} hora${
-        account.offer.plan.durationMonths === 1 ? "" : "s"
+      itemId: offer.tool.id,
+      itemName: offer.tool.name,
+      imageUrl: offer.tool.imageUrl,
+      planId: offer.plan.id,
+      planName: offer.plan.name,
+      durationLabel: `${offer.plan.durationMonths} hora${
+        offer.plan.durationMonths === 1 ? "" : "s"
       }`,
-      username: account.username,
-      password: account.password,
-      note: account.note,
-      isActive: account.isActive,
-      assignedToName: account.assignedTo
-        ? `${account.assignedTo.firstName} ${account.assignedTo.lastName}`.trim()
-        : null,
-      assignedToEmail: account.assignedTo?.email ?? null,
-      assignedAt: account.assignedAt?.toISOString() ?? null,
-      expiresAt: account.assignedExpiresAt?.toISOString() ?? null,
-      remaining: remainingText(account.assignedExpiresAt),
-      status: account.assignedTo ? "assigned" : "available",
+      accountCount: offer.accounts.length,
+      availableCount: offer.accounts.filter((account) => !account.assignedToId).length,
+      assignedCount: offer.accounts.filter((account) => account.assignedToId).length,
+      accounts: offer.accounts.map((account) => ({
+        id: account.id,
+        username: account.username,
+        password: account.password,
+        note: account.note,
+        isActive: account.isActive,
+        assignedToName: account.assignedTo
+          ? `${account.assignedTo.firstName} ${account.assignedTo.lastName}`.trim()
+          : null,
+        assignedToEmail: account.assignedTo?.email ?? null,
+        assignedAt: account.assignedAt?.toISOString() ?? null,
+        expiresAt: account.assignedExpiresAt?.toISOString() ?? null,
+        remaining: remainingText(account.assignedExpiresAt),
+        status: account.assignedTo ? "assigned" : "available",
+      })),
     })),
   ];
 
-  return NextResponse.json({ connections });
+  return NextResponse.json({ connections: groups });
 }
