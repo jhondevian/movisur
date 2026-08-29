@@ -2,7 +2,6 @@
 
 import { InfoIcon, TimeIcon } from "@/icons";
 import { useState } from "react";
-import ProductFileReportButton from "./ProductFileReportButton";
 
 type ProductRevision = {
   id: string;
@@ -18,7 +17,6 @@ type ProductRevision = {
 
 type ProductContentTabsProps = {
   description: string;
-  productFileId: string;
   actionHref: string;
   actionLabel: string;
   canAccess: boolean;
@@ -44,7 +42,6 @@ function formatUploadedAt(value: string) {
 
 export default function ProductContentTabs({
   description,
-  productFileId,
   actionHref,
   actionLabel,
   canAccess,
@@ -122,7 +119,6 @@ export default function ProductContentTabs({
                     {requiresPurchase ? "Ver planes disponibles" : actionLabel}
                   </a>
                 ) : null}
-                <ProductFileReportButton productFileId={productFileId} />
               </div>
             </div>
           </div>

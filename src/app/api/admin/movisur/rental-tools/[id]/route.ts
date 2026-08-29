@@ -25,6 +25,7 @@ export async function PATCH(
   const description = getString(formData, "description");
   const sortOrder = Number(getString(formData, "sortOrder") || 0);
   const isActive = getBoolean(formData, "isActive");
+  const showInFrontend = getBoolean(formData, "showInFrontend");
   const plans = parsePlans(getString(formData, "plans"));
   const image = formData.get("image");
 
@@ -60,6 +61,7 @@ export async function PATCH(
           description,
           sortOrder,
           isActive,
+          showInFrontend,
           ...(imageUrl ? { imageUrl } : {}),
         },
       });

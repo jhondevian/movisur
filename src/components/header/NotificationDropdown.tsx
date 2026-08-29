@@ -59,11 +59,14 @@ function getNotificationMeta(notification: AdminNotification) {
     };
   }
 
-  if (notification.type === "payment_confirmed") {
+  if (
+    notification.type === "payment_confirmed" ||
+    notification.type === "payment_rejected"
+  ) {
     return {
       href: "/usuario/compras",
-      icon: "✓",
-      label: "Confirmado",
+      icon: notification.type === "payment_confirmed" ? "✓" : "!",
+      label: notification.type === "payment_confirmed" ? "Confirmado" : "Rechazado",
     };
   }
 
@@ -205,7 +208,7 @@ export default function NotificationDropdown() {
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="absolute -right-[240px] mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] lg:right-0"
+        className="fixed left-3 right-3 top-28 z-50 mt-0 flex h-[480px] max-h-[calc(100vh-8rem)] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-[17px] sm:w-[361px]"
       >
         <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-700">
           <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200">

@@ -181,6 +181,7 @@ export default async function MovisurConfiguracionPage() {
           description: item.description,
           imageUrl: item.imageUrl,
           isActive: item.isActive,
+          showInFrontend: item.showInFrontend,
           sortOrder: item.sortOrder,
           plans: item.plans.map((plan) => ({
             id: plan.id,

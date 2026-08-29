@@ -1,4 +1,3 @@
-import { assignCreatorAccountToUser } from "@/lib/creator-commerce-accounts";
 import { requireCreatorSession } from "@/lib/creator-commerce-offer-auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -25,7 +24,7 @@ function parseMetadata(metadata: string | null): PaymentMetadata {
   }
 }
 
-async function notifyBuyerPaymentConfirmed(
+async function notifyBuyerPaymentRejected(
   purchaseId: string,
   metadata: PaymentMetadata
 ) {
@@ -33,7 +32,7 @@ async function notifyBuyerPaymentConfirmed(
 
   const existingNotification = await prisma.adminNotification.findFirst({
     where: {
-      type: "payment_confirmed",
+      type: "payment_rejected",
       recipientUserId: metadata.userId,
       metadata: {
         contains: `"purchaseNotificationId":"${purchaseId}"`,
@@ -52,10 +51,10 @@ async function notifyBuyerPaymentConfirmed(
 
   await prisma.adminNotification.create({
     data: {
-      type: "payment_confirmed",
+      type: "payment_rejected",
       recipientUserId: metadata.userId,
-      title: "Pago confirmado",
-      message: `${itemName}${priceText} ya fue aprobado.`,
+      title: "Pago rechazado",
+      message: `${itemName}${priceText} fue rechazado. Revisa el comprobante enviado.`,
       metadata: JSON.stringify({
         purchaseNotificationId: purchaseId,
         itemName,
@@ -94,27 +93,24 @@ export async function POST(
 
   const metadata = parseMetadata(purchase.metadata);
   if (metadata.purchaseStatus === "confirmed") {
-    return NextResponse.json({ ok: true });
-  }
-
-  if (metadata.purchaseStatus === "rejected") {
     return NextResponse.json(
-      { message: "La compra ya fue rechazada." },
+      { message: "La compra ya fue confirmada." },
       { status: 409 }
     );
   }
 
-  const updatedMetadata = await assignCreatorAccountToUser({
-    metadata: {
-      ...metadata,
-      purchaseStatus: "confirmed",
-      confirmedAt: new Date().toISOString(),
-      confirmedById: user.id,
-      confirmedByName: `${user.firstName} ${user.lastName}`.trim(),
-      confirmedByEmail: user.email,
-    },
-    notificationId: purchase.id,
-  });
+  if (metadata.purchaseStatus === "rejected") {
+    return NextResponse.json({ ok: true });
+  }
+
+  const updatedMetadata = {
+    ...metadata,
+    purchaseStatus: "rejected",
+    rejectedAt: new Date().toISOString(),
+    rejectedById: user.id,
+    rejectedByName: `${user.firstName} ${user.lastName}`.trim(),
+    rejectedByEmail: user.email,
+  };
 
   await prisma.adminNotification.update({
     where: { id: purchase.id },
@@ -124,7 +120,7 @@ export async function POST(
     },
   });
 
-  await notifyBuyerPaymentConfirmed(purchase.id, updatedMetadata);
+  await notifyBuyerPaymentRejected(purchase.id, updatedMetadata);
 
   return NextResponse.json({ ok: true });
 }

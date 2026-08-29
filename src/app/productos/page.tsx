@@ -90,22 +90,28 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     prisma.creatorRentalTool.findMany({
       where: {
         isActive: true,
-        offers: {
-          some: {
-            isActive: true,
-            ...(userId ? { creatorId: { not: userId } } : {}),
-            accounts: {
-              some: availableAccountWhere,
+        OR: [
+          { showInFrontend: true },
+          {
+            offers: {
+              some: {
+                isActive: true,
+                ...(userId ? { creatorId: { not: userId } } : {}),
+                accounts: {
+                  some: availableAccountWhere,
+                },
+                plan: { isActive: true },
+              },
             },
-            plan: { isActive: true },
           },
-        },
+        ],
       },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       include: {
         offers: {
           where: {
             isActive: true,
+            ...(userId ? { creatorId: { not: userId } } : {}),
             accounts: {
               some: availableAccountWhere,
             },

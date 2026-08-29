@@ -1,6 +1,7 @@
 import FrontendFooter from "@/components/frontend/FrontendFooter";
 import FrontendHeader from "@/components/frontend/FrontendHeader";
 import ProductContentTabs from "@/components/frontend/ProductContentTabs";
+import ProductFileReportButton from "@/components/frontend/ProductFileReportButton";
 import ProductRating from "@/components/frontend/ProductRating";
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -275,12 +276,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h1 className="mx-auto mt-5 max-w-5xl break-words text-[42px] font-extrabold leading-[1.04] text-gray-950 dark:text-white sm:text-[64px] lg:text-[72px]">
               {product.name}
             </h1>
-            {product.description ? (
-              <p className="mx-auto mt-6 max-w-4xl text-base leading-7 text-gray-600 dark:text-gray-400 sm:text-xl sm:leading-8">
-                {product.description}
-              </p>
-            ) : null}
-
             <div className="relative mt-9 flex h-56 w-full max-w-xl items-center justify-center sm:h-72">
               {imageUrl ? (
                 <Image
@@ -309,7 +304,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </a>
             </div>
 
-            <div className="mt-10 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
+            <div className="mt-10 grid w-full max-w-4xl grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-5">
               {[
                 { label: "Tipo", value: getFileTypeLabel(product.fileType) },
                 { label: "Tamano", value: formatSize(product.fileSize) },
@@ -325,6 +320,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   </span>
                 </div>
               ))}
+              <ProductFileReportButton productFileId={product.id} />
             </div>
 
             <ProductRating
@@ -339,7 +335,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </section>
 
         <ProductContentTabs
-          productFileId={product.id}
           description={
             product.description ||
             "Producto Movisur configurado desde el panel para descarga directa."

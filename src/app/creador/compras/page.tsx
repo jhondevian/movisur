@@ -25,6 +25,7 @@ type PaymentMetadata = {
   price?: string;
   currency?: string;
   purchaseStatus?: string;
+  rejectedAt?: string;
 };
 
 function parseMetadata(metadata: string | null): PaymentMetadata {
@@ -74,7 +75,11 @@ export default async function CreadorComprasPage() {
     const metadata = parseMetadata(item.metadata);
     return metadata.purchaseStatus === "confirmed";
   }).length;
-  const pendingCount = confirmations.length - confirmedCount;
+  const rejectedCount = confirmations.filter((item) => {
+    const metadata = parseMetadata(item.metadata);
+    return metadata.purchaseStatus === "rejected";
+  }).length;
+  const pendingCount = confirmations.length - confirmedCount - rejectedCount;
   const totalAmount = confirmations.reduce((total, item) => {
     const metadata = parseMetadata(item.metadata);
     return total + Number(metadata.price || 0);
@@ -141,6 +146,7 @@ export default async function CreadorComprasPage() {
                   const metadata = parseMetadata(confirmation.metadata);
                   const isConfirmed =
                     metadata.purchaseStatus === "confirmed";
+                  const isRejected = metadata.purchaseStatus === "rejected";
                   const durationLabel =
                     metadata.commerceType === "rental" ? "hora" : "mes";
                   const duration = metadata.durationMonths
@@ -185,10 +191,16 @@ export default async function CreadorComprasPage() {
                           className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                             isConfirmed
                               ? "bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400"
+                              : isRejected
+                              ? "bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400"
                               : "bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-400"
                           }`}
                         >
-                          {isConfirmed ? "Confirmada" : "Pendiente"}
+                          {isConfirmed
+                            ? "Confirmada"
+                            : isRejected
+                            ? "Rechazada"
+                            : "Pendiente"}
                         </span>
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -198,8 +210,10 @@ export default async function CreadorComprasPage() {
                         <AdminPurchaseActions
                           id={confirmation.id}
                           isConfirmed={isConfirmed}
+                          isRejected={isRejected}
                           detailHref={`/creador/compras/${confirmation.id}`}
                           confirmEndpoint={`/api/creador/compras/${confirmation.id}/confirm`}
+                          rejectEndpoint={`/api/creador/compras/${confirmation.id}/reject`}
                         />
                       </td>
                     </tr>

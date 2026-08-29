@@ -1,7 +1,7 @@
 import { assignCreatorAccountToUser } from "@/lib/creator-commerce-accounts";
-import { requireCreatorSession } from "@/lib/creator-commerce-offer-auth";
+import { verifyMobileAuth } from "@/lib/mobile-auth";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,6 @@ type PaymentMetadata = {
 
 function parseMetadata(metadata: string | null): PaymentMetadata {
   if (!metadata) return {};
-
   try {
     return JSON.parse(metadata) as PaymentMetadata;
   } catch {
@@ -35,13 +34,10 @@ async function notifyBuyerPaymentConfirmed(
     where: {
       type: "payment_confirmed",
       recipientUserId: metadata.userId,
-      metadata: {
-        contains: `"purchaseNotificationId":"${purchaseId}"`,
-      },
+      metadata: { contains: `"purchaseNotificationId":"${purchaseId}"` },
     },
     select: { id: true },
   });
-
   if (existingNotification) return;
 
   const itemName = metadata.itemName || metadata.planName || "Movisur";
@@ -68,11 +64,11 @@ async function notifyBuyerPaymentConfirmed(
 }
 
 export async function POST(
-  _request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const user = await requireCreatorSession();
-  if (!user) {
+  const user = await verifyMobileAuth(request);
+  if (!user || user.role !== "creador") {
     return NextResponse.json({ message: "No autorizado" }, { status: 401 });
   }
 
@@ -96,7 +92,6 @@ export async function POST(
   if (metadata.purchaseStatus === "confirmed") {
     return NextResponse.json({ ok: true });
   }
-
   if (metadata.purchaseStatus === "rejected") {
     return NextResponse.json(
       { message: "La compra ya fue rechazada." },
@@ -118,10 +113,7 @@ export async function POST(
 
   await prisma.adminNotification.update({
     where: { id: purchase.id },
-    data: {
-      isRead: true,
-      metadata: JSON.stringify(updatedMetadata),
-    },
+    data: { isRead: true, metadata: JSON.stringify(updatedMetadata) },
   });
 
   await notifyBuyerPaymentConfirmed(purchase.id, updatedMetadata);

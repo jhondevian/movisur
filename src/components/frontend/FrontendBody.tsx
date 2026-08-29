@@ -127,19 +127,19 @@ function ProductCard({
       </Link>
 
       {product.text ? (
-        <div className="mt-6 min-h-[96px] w-full max-w-[180px]">
-          <p className="line-clamp-4 break-words text-sm leading-6 text-gray-600 dark:text-gray-400">
-            {product.text}{" "}
-            <button
-              type="button"
-              className="inline text-xs font-medium text-gray-500 underline-offset-2 hover:underline dark:text-gray-400"
+        <div className="mt-6 min-h-7 w-full max-w-[180px]">
+          <p className="flex min-w-0 items-center justify-center gap-1 text-sm leading-6 text-gray-600 dark:text-gray-400">
+            <span className="min-w-0 truncate">{product.text}</span>
+            <Link
+              href={product.productUrl}
+              className="shrink-0 text-xs font-medium text-gray-500 underline-offset-2 hover:underline dark:text-gray-400"
             >
               Ver mas
-            </button>
+            </Link>
           </p>
         </div>
       ) : (
-        <div className="min-h-[96px] w-full max-w-[180px]" />
+        <div className="min-h-7 w-full max-w-[180px]" />
       )}
 
       <a

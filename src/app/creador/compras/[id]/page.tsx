@@ -26,6 +26,9 @@ type PaymentMetadata = {
   confirmedAt?: string;
   confirmedByName?: string;
   confirmedByEmail?: string;
+  rejectedAt?: string;
+  rejectedByName?: string;
+  rejectedByEmail?: string;
   proofImageUrl?: string;
   [key: string]: unknown;
 };
@@ -102,6 +105,7 @@ export default async function CreadorCompraDetallePage({
 
   const metadata = parseMetadata(confirmation.metadata);
   const isConfirmed = metadata.purchaseStatus === "confirmed";
+  const isRejected = metadata.purchaseStatus === "rejected";
   const durationText = metadata.durationMonths
     ? metadata.commerceType === "rental"
       ? `${metadata.durationMonths} hora${
@@ -132,8 +136,10 @@ export default async function CreadorCompraDetallePage({
         <AdminPurchaseActions
           id={confirmation.id}
           isConfirmed={isConfirmed}
+          isRejected={isRejected}
           detailHref={`/creador/compras/${confirmation.id}`}
           confirmEndpoint={`/api/creador/compras/${confirmation.id}/confirm`}
+          rejectEndpoint={`/api/creador/compras/${confirmation.id}/reject`}
         />
       </div>
 
@@ -151,10 +157,12 @@ export default async function CreadorCompraDetallePage({
             className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${
               isConfirmed
                 ? "bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400"
+                : isRejected
+                ? "bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400"
                 : "bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-400"
             }`}
           >
-            {isConfirmed ? "Confirmada" : "Pendiente"}
+            {isConfirmed ? "Confirmada" : isRejected ? "Rechazada" : "Pendiente"}
           </span>
         </div>
 
@@ -194,6 +202,12 @@ export default async function CreadorCompraDetallePage({
           <DetailItem
             label="Fecha confirmacion"
             value={formatDate(metadata.confirmedAt)}
+          />
+          <DetailItem label="Rechazado por" value={metadata.rejectedByName} />
+          <DetailItem label="Correo rechazo" value={metadata.rejectedByEmail} />
+          <DetailItem
+            label="Fecha rechazo"
+            value={formatDate(metadata.rejectedAt)}
           />
         </div>
       </div>

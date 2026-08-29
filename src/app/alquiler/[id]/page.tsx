@@ -118,7 +118,7 @@ export default async function RentalPage({ params }: RentalPageProps) {
     },
   });
 
-  if (!tool || tool.offers.length === 0) notFound();
+  if (!tool || (!tool.showInFrontend && tool.offers.length === 0)) notFound();
   const lowestOffer = tool.offers[0];
   const toolJsonLd = {
     "@context": "https://schema.org",

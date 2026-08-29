@@ -20,6 +20,7 @@ type CommerceItem = {
   description: string | null;
   imageUrl: string | null;
   isActive: boolean;
+  showInFrontend?: boolean;
   sortOrder: number;
   plans: Plan[];
 };
@@ -366,6 +367,16 @@ export default function CreatorCommerceItemsForm({
             />
             Activo
           </label>
+          {durationLabel === "Horas" ? (
+            <label className="flex items-center gap-2 pb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <input
+                name="showInFrontend"
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+              />
+              Frontend
+            </label>
+          ) : null}
         </div>
 
         {renderPlans(newPlans, setNewPlans)}
@@ -424,15 +435,28 @@ export default function CreatorCommerceItemsForm({
                     accept="image/png,image/jpeg,image/webp"
                     className="h-10 w-full overflow-hidden rounded-lg border border-gray-300 bg-white text-xs text-gray-500 file:mr-3 file:cursor-pointer file:border-0 file:border-r file:border-gray-200 file:bg-gray-50 file:px-3 file:py-2.5 file:text-xs file:text-gray-700 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-400 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400"
                   />
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <input
-                      name="isActive"
-                      type="checkbox"
-                      defaultChecked={item.isActive}
-                      className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                    />
-                    Activo
-                  </label>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <input
+                        name="isActive"
+                        type="checkbox"
+                        defaultChecked={item.isActive}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                      />
+                      Activo
+                    </label>
+                    {durationLabel === "Horas" ? (
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <input
+                          name="showInFrontend"
+                          type="checkbox"
+                          defaultChecked={Boolean(item.showInFrontend)}
+                          className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                        />
+                        Frontend
+                      </label>
+                    ) : null}
+                  </div>
                   {renderPlans(editingItem.plans, (plans) =>
                     setEditingItem({ ...editingItem, plans })
                   )}
@@ -480,7 +504,8 @@ export default function CreatorCommerceItemsForm({
                   </div>
                   <div className="mt-4 flex items-center justify-between">
                     <span className="text-xs text-gray-400">
-                      {item.isActive ? "Activo" : "Inactivo"} - Orden{" "}
+                      {item.isActive ? "Activo" : "Inactivo"}
+                      {item.showInFrontend ? " - Frontend" : ""} - Orden{" "}
                       {item.sortOrder}
                     </span>
                     <button

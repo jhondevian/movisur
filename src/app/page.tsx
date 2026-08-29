@@ -109,16 +109,21 @@ export default async function Home({ searchParams }: HomeProps) {
     prisma.creatorRentalTool.findMany({
       where: {
         isActive: true,
-        offers: {
-          some: {
-            isActive: true,
-            ...(userId ? { creatorId: { not: userId } } : {}),
-            accounts: {
-              some: availableAccountWhere,
+        OR: [
+          { showInFrontend: true },
+          {
+            offers: {
+              some: {
+                isActive: true,
+                ...(userId ? { creatorId: { not: userId } } : {}),
+                accounts: {
+                  some: availableAccountWhere,
+                },
+                plan: { isActive: true },
+              },
             },
-            plan: { isActive: true },
           },
-        },
+        ],
       },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       take: 12,
@@ -126,6 +131,7 @@ export default async function Home({ searchParams }: HomeProps) {
         offers: {
           where: {
             isActive: true,
+            ...(userId ? { creatorId: { not: userId } } : {}),
             accounts: {
               some: availableAccountWhere,
             },
