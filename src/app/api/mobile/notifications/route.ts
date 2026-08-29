@@ -95,6 +95,15 @@ export async function GET(request: NextRequest) {
     notifications: notifications.map((notification) => ({
       ...notification,
       createdAt: notification.createdAt.toISOString(),
+      metadata: notification.metadata
+        ? (() => {
+            try {
+              return JSON.parse(notification.metadata || "{}");
+            } catch {
+              return {};
+            }
+          })()
+        : {},
       access: accountsByNotificationId.get(notification.id) ?? null,
     })),
     unreadCount,
