@@ -1,7 +1,8 @@
 "use client";
 
-import { DownloadIcon, InfoIcon, TimeIcon } from "@/icons";
+import { InfoIcon, TimeIcon } from "@/icons";
 import { useState } from "react";
+import ProductFileReportButton from "./ProductFileReportButton";
 
 type ProductRevision = {
   id: string;
@@ -17,6 +18,7 @@ type ProductRevision = {
 
 type ProductContentTabsProps = {
   description: string;
+  productFileId: string;
   actionHref: string;
   actionLabel: string;
   canAccess: boolean;
@@ -42,6 +44,7 @@ function formatUploadedAt(value: string) {
 
 export default function ProductContentTabs({
   description,
+  productFileId,
   actionHref,
   actionLabel,
   canAccess,
@@ -89,11 +92,6 @@ export default function ProductContentTabs({
             </div>
             <div className="min-w-0">
               <div className="p-2 sm:p-4">
-                {canAccess ? (
-                  <div className="mb-7 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400">
-                    <DownloadIcon className="h-7 w-7" />
-                  </div>
-                ) : null}
                 <h2 className="break-words text-2xl font-extrabold leading-tight text-gray-950 dark:text-white sm:text-3xl">
                   {canAccess
                     ? "Descarga disponible"
@@ -124,6 +122,7 @@ export default function ProductContentTabs({
                     {requiresPurchase ? "Ver planes disponibles" : actionLabel}
                   </a>
                 ) : null}
+                <ProductFileReportButton productFileId={productFileId} />
               </div>
             </div>
           </div>

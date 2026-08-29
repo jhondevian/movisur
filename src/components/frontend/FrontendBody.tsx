@@ -283,6 +283,10 @@ export default function FrontendBody({
       section.items.length > 0 &&
       section.title.toLowerCase().startsWith("alquiler")
   );
+  const alquilerMoreHref = "/productos?tipo=alquiler";
+  const hasAlquilerMore = alquilerSections.some(
+    (section) => section.items.length > sectionPreviewLimit
+  );
   const otherCommerceSections = creatorCommerceSections.filter(
     (section) =>
       section.items.length > 0 &&
@@ -386,7 +390,40 @@ export default function FrontendBody({
       >
         <div className="mb-8">
           <div className="flex items-center justify-between gap-4">
-            <div />
+            <div className="flex min-w-0 items-center gap-2">
+              {alquilerSections.length > 0 ? (
+                <>
+                  <Link
+                    href={alquilerMoreHref}
+                    className="rounded-lg bg-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-brand-600"
+                  >
+                    Alquiler
+                  </Link>
+                  {hasAlquilerMore ? (
+                    <Link
+                      href={alquilerMoreHref}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/5"
+                      aria-label="Ver mas alquileres"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M5 12h14m-6-6 6 6-6 6"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                        />
+                      </svg>
+                    </Link>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
             <div className="flex min-w-0 items-center justify-end gap-2">
               <div className="flex min-w-0 items-center justify-end gap-2">
                 <div
@@ -516,12 +553,6 @@ export default function FrontendBody({
           ? alquilerSections
               .map((section) => (
                 <div key={section.title} className="mt-16 first:mt-0">
-                  <SectionTitle
-                    href="/productos?tipo=alquiler"
-                    showMore={section.items.length > sectionPreviewLimit}
-                    title={section.title}
-                  />
-
                   <div className="flex flex-wrap justify-center gap-6">
                     {section.items.slice(0, sectionPreviewLimit).map((item, index) => (
                       <article

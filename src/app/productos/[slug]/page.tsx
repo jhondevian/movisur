@@ -339,6 +339,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </section>
 
         <ProductContentTabs
+          productFileId={product.id}
           description={
             product.description ||
             "Producto Movisur configurado desde el panel para descarga directa."

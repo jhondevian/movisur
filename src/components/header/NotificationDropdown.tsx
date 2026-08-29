@@ -10,6 +10,7 @@ type AdminNotification = {
   type: string;
   title: string;
   message: string;
+  metadata?: string | null;
   isRead: boolean;
   createdAt: string;
   recipientUserId?: string | null;
@@ -29,11 +30,32 @@ function timeAgo(value: string) {
 }
 
 function getNotificationMeta(notification: AdminNotification) {
+  let metadata: { productHref?: string; productSlug?: string } = {};
+
+  try {
+    metadata = JSON.parse(notification.metadata || "{}") as {
+      productHref?: string;
+      productSlug?: string;
+    };
+  } catch {
+    metadata = {};
+  }
+
   if (notification.type === "creator_access_request") {
     return {
       href: "/admin/creadores/solicitudes",
       icon: "C",
       label: "Solicitud",
+    };
+  }
+
+  if (notification.type === "file_report") {
+    return {
+      href:
+        metadata.productHref ||
+        (metadata.productSlug ? `/productos/${metadata.productSlug}` : "/admin/archivos"),
+      icon: "!",
+      label: "Reporte",
     };
   }
 
