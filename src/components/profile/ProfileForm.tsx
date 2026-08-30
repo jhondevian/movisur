@@ -53,6 +53,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
       if (fileInputRef.current) fileInputRef.current.value = "";
       setStatusMessage("Perfil actualizado correctamente.");
+      window.dispatchEvent(new Event("movisur-profile-updated"));
       router.refresh();
     } catch {
       setErrorMessage("No se pudo conectar con el servidor.");
@@ -82,13 +83,22 @@ export default function ProfileForm({ user }: ProfileFormProps) {
             aria-label="Actualizar imagen de perfil"
           >
             {avatarPreview ? (
-              <Image
-                src={avatarPreview}
-                width={128}
-                height={128}
-                alt="Foto de perfil"
-                className="h-full w-full object-cover"
-              />
+              avatarPreview.startsWith("blob:") ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarPreview}
+                  alt="Foto de perfil"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Image
+                  src={avatarPreview}
+                  width={128}
+                  height={128}
+                  alt="Foto de perfil"
+                  className="h-full w-full object-cover"
+                />
+              )
             ) : (
               user.firstName.slice(0, 1).toUpperCase()
             )}

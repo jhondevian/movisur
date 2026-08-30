@@ -20,13 +20,19 @@ async function getPanelUser() {
 }
 
 function getNotificationWhere(user: { id: string; role: UserRole }) {
+  const visibleWhere = {
+    archivedAt: null,
+    deletedAt: null,
+  };
+
   if (user.role === "admin" || user.role === "moderador") {
     return {
+      ...visibleWhere,
       OR: [{ recipientUserId: null }, { recipientUserId: user.id }],
     };
   }
 
-  return { recipientUserId: user.id };
+  return { ...visibleWhere, recipientUserId: user.id };
 }
 
 export async function GET() {

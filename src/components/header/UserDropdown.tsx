@@ -38,9 +38,11 @@ export default function UserDropdown() {
     }
 
     loadUser();
+    window.addEventListener("movisur-profile-updated", loadUser);
 
     return () => {
       isMounted = false;
+      window.removeEventListener("movisur-profile-updated", loadUser);
     };
   }, []);
 

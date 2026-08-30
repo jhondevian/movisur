@@ -22,6 +22,15 @@ type ProductsPageProps = {
   }>;
 };
 
+function normalizeImageUrl(value?: string | null) {
+  const imageUrl = value?.trim();
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith("http") || imageUrl.startsWith("/")) return imageUrl;
+  if (imageUrl.startsWith("uploads/")) return `/${imageUrl}`;
+
+  return imageUrl;
+}
+
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams;
   const cookieStore = await cookies();
@@ -158,7 +167,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               productUrl: `/alquiler/${tool.id}`,
               title: tool.name,
               text: tool.description,
-              imageUrl: tool.imageUrl,
+              imageUrl: normalizeImageUrl(tool.imageUrl),
               price: tool.offers[0]?.price.toString() ?? "0",
               currency: tool.offers[0]?.currency ?? "USD",
             })),

@@ -550,11 +550,14 @@ model AdminNotification {
   message         String
   metadata        String?
   isRead          Boolean  @default(false) @map("is_read")
+  archivedAt      DateTime? @map("archived_at") @db.Timestamptz(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   recipient       User?    @relation("NotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
 
   @@index([isRead, createdAt], map: "admin_notifications_unread_idx")
   @@index([recipientUserId, isRead, createdAt], map: "admin_notifications_recipient_idx")
+  @@index([recipientUserId, archivedAt, deletedAt, createdAt], map: "admin_notifications_visible_idx")
   @@map("admin_notifications")
 }
 

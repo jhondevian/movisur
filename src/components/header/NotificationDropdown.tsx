@@ -178,6 +178,31 @@ export default function NotificationDropdown() {
     setIsOpen(false);
   }
 
+  async function handleNotificationAction(
+    notificationId: string,
+    action: "archive" | "delete"
+  ) {
+    const response = await fetch(`/api/admin/notifications/${notificationId}`, {
+      method: action === "archive" ? "PATCH" : "DELETE",
+    });
+
+    if (!response.ok) return;
+
+    setNotifications((current) =>
+      current.filter((notification) => notification.id !== notificationId)
+    );
+    setUnreadCount((current) =>
+      Math.max(
+        0,
+        current -
+          (notifications.find((notification) => notification.id === notificationId)
+            ?.isRead
+            ? 0
+            : 1)
+      )
+    );
+  }
+
   return (
     <div className="relative">
       <button
@@ -231,7 +256,7 @@ export default function NotificationDropdown() {
               <li key={notification.id}>
                 <DropdownItem
                   onItemClick={closeDropdown}
-                  className="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
+                  className="flex flex-col gap-2 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
                 >
                   <Link href={meta.href} className="flex gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-500 dark:bg-brand-500/10">
@@ -251,6 +276,30 @@ export default function NotificationDropdown() {
                       </span>
                     </span>
                   </Link>
+                  <div className="ml-[52px] flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleNotificationAction(notification.id, "archive");
+                      }}
+                      className="rounded-md border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-500 transition hover:bg-white hover:text-gray-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-200"
+                    >
+                      Archivar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleNotificationAction(notification.id, "delete");
+                      }}
+                      className="rounded-md border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-500 transition hover:bg-white hover:text-gray-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-200"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </DropdownItem>
               </li>
               );
