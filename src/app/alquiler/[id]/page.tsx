@@ -6,8 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { absoluteUrl, cleanSeoText, getShareImage, siteUrl } from "@/lib/site-metadata";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -211,41 +209,6 @@ export default async function RentalPage({ params }: RentalPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(toolJsonLd) }}
       />
       <main className="bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
-        <section className="border-b border-gray-100 bg-[linear-gradient(180deg,#f8fbff_0%,#f7f6ff_58%,#eef3ff_100%)] dark:border-gray-900 dark:bg-none dark:bg-gray-950">
-          <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-5 pb-14 pt-10 text-center sm:px-6 sm:pb-16 sm:pt-14 lg:px-8">
-            <Link
-              href="/#operaciones"
-              className="text-sm font-semibold text-brand-500 transition hover:text-brand-600"
-            >
-              Volver a productos
-            </Link>
-            <h1 className="mx-auto mt-5 max-w-5xl text-[42px] font-extrabold leading-[1.04] text-gray-950 dark:text-white sm:text-[64px] lg:text-[72px]">
-              {tool.name}
-            </h1>
-            {tool.description ? (
-              <p className="mx-auto mt-6 max-w-4xl text-base leading-7 text-gray-600 dark:text-gray-400 sm:text-xl sm:leading-8">
-                {tool.description}
-              </p>
-            ) : null}
-            <div className="relative mt-9 flex h-56 w-full max-w-xl items-center justify-center sm:h-72">
-              {tool.imageUrl ? (
-                <Image
-                  src={tool.imageUrl}
-                  alt={tool.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 520px"
-                  className="object-contain"
-                  priority
-                />
-              ) : (
-                <span className="text-5xl font-extrabold text-gray-950 dark:text-white">
-                  {tool.name.slice(0, 2).toUpperCase()}
-                </span>
-              )}
-            </div>
-          </div>
-        </section>
-
         <CreatorCommerceBuyBox
           nextPath={`/alquiler/${tool.id}`}
           offers={tool.offers.map((offer) => ({
