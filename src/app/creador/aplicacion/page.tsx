@@ -87,18 +87,16 @@ export default async function CreadorAplicacionPage() {
             <div className="absolute right-0 top-0 h-52 w-52 rounded-full bg-brand-500/25 blur-3xl" />
             <div className="absolute bottom-0 left-1/3 h-32 w-32 rounded-full bg-cyan-400/15 blur-3xl" />
 
-            <div className="relative grid gap-8 lg:grid-cols-[1fr_320px] lg:items-center">
+            <div className="relative grid gap-6 lg:grid-cols-[1fr_300px] lg:items-center">
               <div>
                 <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/15">
-                  {latestRelease.releaseType.toUpperCase()}
+                  {latestRelease.releaseType === "stable"
+                    ? "ESTABLE"
+                    : latestRelease.releaseType.toUpperCase()}
                 </span>
                 <h2 className="mt-5 text-4xl font-black tracking-[-0.5px] sm:text-5xl">
                   Movisur v{latestRelease.version}
                 </h2>
-                <p className="mt-3 text-base text-white/70">
-                  Build {latestRelease.buildNumber} -{" "}
-                  {formatSize(latestRelease.fileSize)}
-                </p>
 
                 {latestRelease.changelog ? (
                   <p className="mt-6 max-w-2xl whitespace-pre-line text-sm leading-6 text-white/72">
@@ -110,53 +108,26 @@ export default async function CreadorAplicacionPage() {
                     cuentas, compras y avisos desde la app.
                   </p>
                 )}
-
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    href={`/api/movisur/app-releases/${latestRelease.id}/download?role=creador`}
-                    className="inline-flex items-center justify-center rounded-xl bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-theme-md transition hover:bg-brand-600"
-                  >
-                    Descargar APK
-                  </Link>
-                  <span className="inline-flex items-center justify-center rounded-xl border border-white/15 px-6 py-3 text-sm font-semibold text-white/80">
-                    {latestRelease.forceUpdate
-                      ? "Actualizacion obligatoria"
-                      : "Actualizacion recomendada"}
-                  </span>
-                </div>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/8 p-5 backdrop-blur">
-                <div className="flex h-64 flex-col items-center justify-center rounded-2xl bg-white text-gray-950">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-950 text-3xl font-black text-white shadow-theme-md">
-                    M
-                  </div>
-                  <p className="mt-5 text-lg font-black">Movisur</p>
-                  <p className="mt-1 text-sm text-gray-500">Creator App</p>
-                </div>
+              <div className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/8 p-5 backdrop-blur">
+                <p className="text-sm font-semibold text-white/70">
+                  Descarga disponible
+                </p>
+                <Link
+                  href={`/api/movisur/app-releases/${latestRelease.id}/download?role=creador`}
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-brand-500 px-6 py-4 text-sm font-bold text-white shadow-theme-md transition hover:bg-brand-600"
+                >
+                  Descargar APK
+                </Link>
+                <span className="inline-flex w-full items-center justify-center rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-semibold text-white/80">
+                  {latestRelease.forceUpdate
+                    ? "Actualizacion obligatoria"
+                    : "Actualizacion recomendada"}
+                </span>
               </div>
             </div>
           </section>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              { label: "Version", value: `v${latestRelease.version}` },
-              { label: "Build", value: latestRelease.buildNumber },
-              { label: "Publicado", value: formatDate(latestRelease.createdAt) },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]"
-              >
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {item.label}
-                </p>
-                <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
 
           {previousReleases.length > 0 ? (
             <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
