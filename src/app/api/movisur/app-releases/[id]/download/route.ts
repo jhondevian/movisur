@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { siteUrl } from "@/lib/site-metadata";
+import { createReadStream } from "fs";
+import { stat } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
+import path from "path";
+import { Readable } from "stream";
 
 export const runtime = "nodejs";
 
@@ -44,6 +48,15 @@ function getDownloadRedirectUrl(request: NextRequest, downloadUrl: string) {
   }
 }
 
+function getLocalApkPath(downloadUrl: string) {
+  if (!downloadUrl.startsWith("/uploads/movisur-app/")) return null;
+
+  const fileName = path.basename(downloadUrl);
+  if (!fileName.toLowerCase().endsWith(".apk")) return null;
+
+  return path.join(process.cwd(), "public", "uploads", "movisur-app", fileName);
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -70,6 +83,28 @@ export async function GET(
     where: { id },
     data: { downloads: { increment: 1 } },
   });
+
+  const localApkPath = getLocalApkPath(release.downloadUrl);
+
+  if (localApkPath) {
+    try {
+      const fileStats = await stat(localApkPath);
+      const stream = Readable.toWeb(createReadStream(localApkPath));
+
+      return new NextResponse(stream as BodyInit, {
+        headers: {
+          "Content-Disposition": 'attachment; filename="Movisur.apk"',
+          "Content-Length": fileStats.size.toString(),
+          "Content-Type": "application/vnd.android.package-archive",
+        },
+      });
+    } catch {
+      return NextResponse.json(
+        { message: "El archivo APK no esta disponible en el servidor." },
+        { status: 404 }
+      );
+    }
+  }
 
   return NextResponse.redirect(
     getDownloadRedirectUrl(request, release.downloadUrl)

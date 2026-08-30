@@ -589,12 +589,6 @@ export default function FrontendBody({
                           )}
                         </Link>
 
-                        <div className="mt-8 text-center">
-                          <p className="text-lg font-extrabold text-gray-950 dark:text-white">
-                            {item.currency} {item.price}
-                          </p>
-                        </div>
-
                         <Link
                           href={item.productUrl}
                           className="mt-auto flex w-full items-center justify-center rounded-lg bg-brand-500 px-5 py-4 text-base font-semibold text-white shadow-theme-md transition hover:bg-brand-600"

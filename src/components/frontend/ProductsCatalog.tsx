@@ -151,7 +151,13 @@ function ProductCard({
   );
 }
 
-function CommerceCard({ item }: { item: CommerceItem }) {
+function CommerceCard({
+  hidePrice = false,
+  item,
+}: {
+  hidePrice?: boolean;
+  item: CommerceItem;
+}) {
   return (
     <article className="flex min-h-[320px] w-full min-w-0 flex-col items-center rounded-[22px] bg-white px-4 py-6 text-center shadow-theme-xs ring-1 ring-gray-100 sm:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-7.5rem)/6)] dark:bg-gray-950 dark:ring-gray-800">
       <Link
@@ -180,11 +186,13 @@ function CommerceCard({ item }: { item: CommerceItem }) {
         )}
       </Link>
 
-      <div className="mt-8 text-center">
-        <p className="text-lg font-extrabold text-gray-950 dark:text-white">
-          {item.currency} {item.price}
-        </p>
-      </div>
+      {!hidePrice ? (
+        <div className="mt-8 text-center">
+          <p className="text-lg font-extrabold text-gray-950 dark:text-white">
+            {item.currency} {item.price}
+          </p>
+        </div>
+      ) : null}
 
       <Link
         href={item.productUrl}
@@ -324,7 +332,11 @@ export default function ProductsCatalog({
         {selectedCommerceSection ? (
           <div className="mt-8 flex flex-wrap justify-center gap-6">
             {filteredCommerceItems.map((item) => (
-              <CommerceCard key={item.id} item={item} />
+              <CommerceCard
+                key={item.id}
+                hidePrice={selectedCommerceSection.type === "alquiler"}
+                item={item}
+              />
             ))}
           </div>
         ) : (
