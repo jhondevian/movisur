@@ -8,6 +8,12 @@ export type CreatorAccountAssignmentMetadata = {
   assignedAccountId?: string;
   assignedAccountKind?: CreatorAccountKind;
   assignedAccountStatus?: string;
+  currency?: string;
+  itemName?: string;
+  planName?: string;
+  price?: string;
+  purchaseStatus?: string;
+  userId?: string;
   [key: string]: unknown;
 };
 
@@ -17,7 +23,7 @@ export async function assignCreatorAccountToUser({
 }: {
   metadata: CreatorAccountAssignmentMetadata;
   notificationId: string;
-}) {
+}): Promise<CreatorAccountAssignmentMetadata> {
   const userId = typeof metadata.userId === "string" ? metadata.userId : "";
   const offerId = typeof metadata.offerId === "string" ? metadata.offerId : "";
   const now = new Date();

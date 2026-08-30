@@ -1,5 +1,6 @@
 import { assignCreatorAccountToUser } from "@/lib/creator-commerce-accounts";
 import { verifyMobileAuth } from "@/lib/mobile-auth";
+import { sendPushToUsers } from "@/lib/mobile-push";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -117,6 +118,17 @@ export async function POST(
   });
 
   await notifyBuyerPaymentConfirmed(purchase.id, updatedMetadata);
+  if (updatedMetadata.userId) {
+    const itemName =
+      updatedMetadata.itemName || updatedMetadata.planName || "Movisur";
+    await sendPushToUsers([updatedMetadata.userId], {
+      title: "Pago confirmado",
+      body: `${itemName} ya fue aprobado.`,
+      notificationId: purchase.id,
+      route: "vaults",
+      type: "payment_confirmed",
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

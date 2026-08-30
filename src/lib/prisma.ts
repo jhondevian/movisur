@@ -26,6 +26,7 @@ const globalForPrisma = globalThis as unknown as {
     creatorRentalAccount?: unknown;
     creatorAccessRequest?: unknown;
     adminNotification?: unknown;
+    mobilePushToken?: unknown;
     telegramSettings?: unknown;
     telegramFile?: unknown;
     icloudCheckSettings?: unknown;
@@ -39,7 +40,7 @@ const pool = new pg.Pool({
 });
 const adapter = new PrismaPg(pool);
 
-const prismaSchemaVersion = "icloud-check-v1";
+const prismaSchemaVersion = "mobile-push-v1";
 const cachedPrisma = globalForPrisma.prisma;
 const shouldReuseCachedPrisma =
   cachedPrisma &&
@@ -65,6 +66,7 @@ const shouldReuseCachedPrisma =
   "creatorRentalAccount" in cachedPrisma &&
   "creatorAccessRequest" in cachedPrisma &&
   "adminNotification" in cachedPrisma &&
+  "mobilePushToken" in cachedPrisma &&
   "telegramSettings" in cachedPrisma &&
   "telegramFile" in cachedPrisma &&
   "icloudCheckSettings" in cachedPrisma &&

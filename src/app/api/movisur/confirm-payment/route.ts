@@ -1,4 +1,5 @@
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
+import { sendPushToRoles, sendPushToUsers } from "@/lib/mobile-push";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { cookies } from "next/headers";
@@ -340,6 +341,20 @@ export async function POST(request: NextRequest) {
       metadata: metadataText,
     },
   });
+
+  const pushPayload = {
+    title,
+    body: message || "Nueva confirmacion de pago pendiente.",
+    notificationId: notification.id,
+    route: "vaults",
+    type: "binance_payment_confirmation",
+  };
+
+  if (recipientUserId) {
+    await sendPushToUsers([recipientUserId], pushPayload);
+  } else {
+    await sendPushToRoles(["admin", "moderador"], pushPayload);
+  }
 
   return NextResponse.json(
     { notification },

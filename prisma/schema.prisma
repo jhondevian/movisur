@@ -69,6 +69,7 @@ model User {
   creatorRentalOffers CreatorRentalOffer[]
   creatorPaymentMethods CreatorPaymentMethod[]
   receivedNotifications AdminNotification[] @relation("NotificationRecipient")
+  mobilePushTokens MobilePushToken[]
   ownedLicenseAccounts CreatorLicenseAccount[] @relation("CreatorLicenseAccountOwner")
   assignedLicenseAccounts CreatorLicenseAccount[] @relation("CreatorLicenseAccountBuyer")
   ownedRentalAccounts CreatorRentalAccount[] @relation("CreatorRentalAccountOwner")
@@ -79,6 +80,23 @@ model User {
 
   @@index([email], map: "users_email_idx")
   @@map("users")
+}
+
+model MobilePushToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  platform  String?  @db.VarChar(40)
+  deviceId  String?  @map("device_id") @db.VarChar(160)
+  isActive  Boolean  @default(true) @map("is_active")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive], map: "mobile_push_tokens_user_active_idx")
+  @@index([token], map: "mobile_push_tokens_token_idx")
+  @@map("mobile_push_tokens")
 }
 
 model CreatorAccessRequest {

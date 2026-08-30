@@ -1,4 +1,5 @@
 import { verifyMobileAuth } from "@/lib/mobile-auth";
+import { sendPushToUsers } from "@/lib/mobile-push";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -113,6 +114,17 @@ export async function POST(
   });
 
   await notifyBuyerPaymentRejected(purchase.id, updatedMetadata);
+  if (updatedMetadata.userId) {
+    const itemName =
+      updatedMetadata.itemName || updatedMetadata.planName || "Movisur";
+    await sendPushToUsers([updatedMetadata.userId], {
+      title: "Pago rechazado",
+      body: `${itemName} fue rechazado. Revisa el comprobante enviado.`,
+      notificationId: purchase.id,
+      route: "vaults",
+      type: "payment_rejected",
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }
