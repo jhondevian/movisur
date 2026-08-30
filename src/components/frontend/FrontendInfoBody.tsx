@@ -31,6 +31,11 @@ type SalePayload = {
   paymentMethods: PaymentMethod[];
 };
 
+type ConfirmPaymentResponse = {
+  duplicate?: boolean;
+  message?: string;
+};
+
 const featureGroups = [
   {
     title: "Servicios Android",
@@ -187,13 +192,24 @@ export default function FrontendInfoBody() {
       method: "POST",
       body: formData,
     });
+    const payload = (await response.json().catch(() => null)) as
+      | ConfirmPaymentResponse
+      | null;
 
     setConfirmingPayment(false);
 
+    if (payload?.duplicate) {
+      setPaymentProof(null);
+      setPaymentMessage(
+        payload.message ??
+          "Ya tienes una confirmacion enviada. Revisa tus confirmaciones enviadas."
+      );
+      router.push("/usuario/compras?confirmacion=pendiente");
+      router.refresh();
+      return;
+    }
+
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
       setPaymentMessage(payload?.message ?? "No se pudo confirmar el pago.");
       return;
     }

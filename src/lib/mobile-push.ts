@@ -42,63 +42,67 @@ export async function sendPushToUsers(
   userIds: string[],
   payload: PushPayload
 ) {
-  const messaging = ensureFirebaseAdmin();
-  const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
+  try {
+    const messaging = ensureFirebaseAdmin();
+    const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
 
-  if (!messaging || uniqueUserIds.length === 0) return;
+    if (!messaging || uniqueUserIds.length === 0) return;
 
-  const pushTokens = await prisma.mobilePushToken.findMany({
-    where: {
-      userId: { in: uniqueUserIds },
-      isActive: true,
-    },
-    select: { id: true, token: true },
-  });
-
-  if (pushTokens.length === 0) return;
-
-  const response = await messaging.sendEachForMulticast({
-    tokens: pushTokens.map((pushToken) => pushToken.token),
-    notification: {
-      title: payload.title,
-      body: payload.body,
-    },
-    data: {
-      notificationId: payload.notificationId ?? "",
-      route: payload.route ?? "vaults",
-      type: payload.type ?? "notification",
-    },
-    android: {
-      priority: "high",
-      notification: {
-        sound: "default",
+    const pushTokens = await prisma.mobilePushToken.findMany({
+      where: {
+        userId: { in: uniqueUserIds },
+        isActive: true,
       },
-    },
-    apns: {
-      payload: {
-        aps: {
+      select: { id: true, token: true },
+    });
+
+    if (pushTokens.length === 0) return;
+
+    const response = await messaging.sendEachForMulticast({
+      tokens: pushTokens.map((pushToken) => pushToken.token),
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: {
+        notificationId: payload.notificationId ?? "",
+        route: payload.route ?? "vaults",
+        type: payload.type ?? "notification",
+      },
+      android: {
+        priority: "high",
+        notification: {
           sound: "default",
         },
       },
-    },
-  });
-
-  const invalidTokenIds = response.responses
-    .map((result, index) => ({ result, token: pushTokens[index] }))
-    .filter(({ result }) => {
-      const code = result.error?.code;
-      return (
-        code === "messaging/invalid-registration-token" ||
-        code === "messaging/registration-token-not-registered"
-      );
-    })
-    .map(({ token }) => token.id);
-
-  if (invalidTokenIds.length > 0) {
-    await prisma.mobilePushToken.updateMany({
-      where: { id: { in: invalidTokenIds } },
-      data: { isActive: false },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+          },
+        },
+      },
     });
+
+    const invalidTokenIds = response.responses
+      .map((result, index) => ({ result, token: pushTokens[index] }))
+      .filter(({ result }) => {
+        const code = result.error?.code;
+        return (
+          code === "messaging/invalid-registration-token" ||
+          code === "messaging/registration-token-not-registered"
+        );
+      })
+      .map(({ token }) => token.id);
+
+    if (invalidTokenIds.length > 0) {
+      await prisma.mobilePushToken.updateMany({
+        where: { id: { in: invalidTokenIds } },
+        data: { isActive: false },
+      });
+    }
+  } catch (error) {
+    console.error("Mobile push send failed", error);
   }
 }
 
@@ -106,13 +110,17 @@ export async function sendPushToRoles(
   roles: Array<"admin" | "moderador" | "creador" | "usuario">,
   payload: PushPayload
 ) {
-  const users = await prisma.user.findMany({
-    where: { role: { in: roles } },
-    select: { id: true },
-  });
+  try {
+    const users = await prisma.user.findMany({
+      where: { role: { in: roles } },
+      select: { id: true },
+    });
 
-  await sendPushToUsers(
-    users.map((user) => user.id),
-    payload
-  );
+    await sendPushToUsers(
+      users.map((user) => user.id),
+      payload
+    );
+  } catch (error) {
+    console.error("Mobile push role lookup failed", error);
+  }
 }

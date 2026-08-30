@@ -26,7 +26,39 @@ type ConfirmPaymentPayload = {
   proofImageUrl?: string;
 };
 
+type PaymentMetadata = ConfirmPaymentPayload & {
+  userId?: string;
+  purchaseStatus?: string;
+};
+
 const allowedProofTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+function parseNotificationMetadata(metadata: string | null): PaymentMetadata {
+  if (!metadata) return {};
+
+  try {
+    return JSON.parse(metadata) as PaymentMetadata;
+  } catch {
+    return {};
+  }
+}
+
+function isSamePendingConfirmation(
+  current: Record<string, unknown>,
+  stored: PaymentMetadata
+) {
+  if (stored.purchaseStatus === "rejected") return false;
+  if (stored.userId !== current.userId) return false;
+  if (stored.commerceType !== current.commerceType) return false;
+
+  const currentOfferId = typeof current.offerId === "string" ? current.offerId : "";
+  const currentPlanId = typeof current.planId === "string" ? current.planId : "";
+
+  if (currentOfferId) return stored.offerId === currentOfferId;
+  if (currentPlanId) return stored.planId === currentPlanId;
+
+  return false;
+}
 
 async function savePaymentProof(file: File) {
   if (file.size <= 0) {
@@ -309,28 +341,49 @@ export async function POST(request: NextRequest) {
     };
   }
 
-  const metadataText = JSON.stringify(metadata);
   const duplicateWindow = new Date(Date.now() - 10 * 60_000);
 
-  const duplicate = await prisma.adminNotification.findFirst({
+  const duplicateCandidates = await prisma.adminNotification.findMany({
     where: {
       type: "binance_payment_confirmation",
-      metadata: metadataText,
+      recipientUserId,
+      metadata: {
+        contains: `"userId":"${authUser.id}"`,
+      },
       createdAt: {
         gte: duplicateWindow,
       },
     },
     select: {
       id: true,
+      type: true,
+      title: true,
+      message: true,
+      metadata: true,
+      isRead: true,
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: "desc",
     },
   });
+  const duplicate = duplicateCandidates.find((notification) =>
+    isSamePendingConfirmation(
+      metadata,
+      parseNotificationMetadata(notification.metadata)
+    )
+  );
 
   if (duplicate) {
-    return NextResponse.json(
-      { message: "Ya se envio una confirmacion reciente para este plan." },
-      { status: 409 }
-    );
+    return NextResponse.json({
+      notification: duplicate,
+      duplicate: true,
+      message:
+        "Ya tienes una confirmacion enviada para esta compra. Revisa tus confirmaciones enviadas.",
+    });
   }
+
+  const metadataText = JSON.stringify(metadata);
 
   const notification = await prisma.adminNotification.create({
     data: {

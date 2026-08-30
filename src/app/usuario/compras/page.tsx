@@ -16,6 +16,12 @@ type PaymentMetadata = {
   purchaseStatus?: string;
 };
 
+type UsuarioComprasPageProps = {
+  searchParams?: Promise<{
+    confirmacion?: string;
+  }>;
+};
+
 function parseMetadata(metadata: string | null): PaymentMetadata {
   if (!metadata) return {};
 
@@ -36,7 +42,11 @@ function formatDate(date: Date) {
   }).format(date);
 }
 
-export default async function UsuarioComprasPage() {
+export default async function UsuarioComprasPage({
+  searchParams,
+}: UsuarioComprasPageProps) {
+  const params = await searchParams;
+  const showPendingNotice = params?.confirmacion === "pendiente";
   const cookieStore = await cookies();
   const token = cookieStore.get(authCookieName)?.value;
 
@@ -67,7 +77,13 @@ export default async function UsuarioComprasPage() {
     const metadata = parseMetadata(item.metadata);
     return metadata.purchaseStatus === "confirmed";
   }).length;
-  const pendingCount = confirmations.length - confirmedCount;
+  const pendingCount = confirmations.filter((item) => {
+    const metadata = parseMetadata(item.metadata);
+    return (
+      metadata.purchaseStatus !== "confirmed" &&
+      metadata.purchaseStatus !== "rejected"
+    );
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -80,6 +96,18 @@ export default async function UsuarioComprasPage() {
           Movisur.
         </p>
       </div>
+
+      {showPendingNotice ? (
+        <div className="rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 text-sm text-brand-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-200">
+          <p className="font-semibold">
+            Ya tienes una confirmacion en proceso.
+          </p>
+          <p className="mt-1">
+            Si la pantalla anterior fallo, tu envio ya quedo guardado. Revisa
+            tus confirmaciones enviadas y espera la revision.
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
         {[
@@ -137,7 +165,12 @@ export default async function UsuarioComprasPage() {
                   const metadata = parseMetadata(confirmation.metadata);
                   const isConfirmed =
                     metadata.purchaseStatus === "confirmed";
-                  const status = isConfirmed ? "Confirmada" : "Pendiente";
+                  const isRejected = metadata.purchaseStatus === "rejected";
+                  const status = isConfirmed
+                    ? "Confirmada"
+                    : isRejected
+                    ? "Rechazada"
+                    : "Pendiente";
 
                   return (
                     <tr key={confirmation.id}>
@@ -165,6 +198,8 @@ export default async function UsuarioComprasPage() {
                           className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                             isConfirmed
                               ? "bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400"
+                              : isRejected
+                              ? "bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400"
                               : "bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-400"
                           }`}
                         >

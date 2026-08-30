@@ -33,6 +33,11 @@ type CreatorCommerceBuyBoxProps = {
   nextPath: string;
 };
 
+type ConfirmPaymentResponse = {
+  duplicate?: boolean;
+  message?: string;
+};
+
 function getMethodLabel(method: PaymentMethod) {
   if (method.code === "transferencia" && method.name === "Yape") return "Yape";
   return method.name;
@@ -95,13 +100,24 @@ export default function CreatorCommerceBuyBox({
       method: "POST",
       body: formData,
     });
+    const payload = (await response.json().catch(() => null)) as
+      | ConfirmPaymentResponse
+      | null;
 
     setConfirmingKey("");
 
+    if (payload?.duplicate) {
+      setProofs((current) => ({ ...current, [key]: null }));
+      setMessage(
+        payload.message ??
+          "Ya tienes una confirmacion enviada. Revisa tus confirmaciones enviadas."
+      );
+      router.push("/usuario/compras?confirmacion=pendiente");
+      router.refresh();
+      return;
+    }
+
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as {
-        message?: string;
-      } | null;
       setMessage(payload?.message ?? "No se pudo confirmar el pago.");
       return;
     }

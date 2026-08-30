@@ -8,13 +8,25 @@ function getNotificationWhere(user: { id: string; role: string }) {
   if (user.role === "admin" || user.role === "moderador") {
     return {
       OR: [{ recipientUserId: null }, { recipientUserId: user.id }],
-      type: { in: ["binance_payment_confirmation", "payment_confirmed"] },
+      type: {
+        in: [
+          "binance_payment_confirmation",
+          "payment_confirmed",
+          "payment_rejected",
+        ],
+      },
     };
   }
 
   return {
     recipientUserId: user.id,
-    type: { in: ["binance_payment_confirmation", "payment_confirmed"] },
+    type: {
+      in: [
+        "binance_payment_confirmation",
+        "payment_confirmed",
+        "payment_rejected",
+      ],
+    },
   };
 }
 
@@ -123,20 +135,27 @@ export async function GET(request: NextRequest) {
   );
 
   return NextResponse.json({
-    notifications: parsedNotifications.map((notification) => ({
-      ...notification,
-      createdAt: notification.createdAt.toISOString(),
-      metadata: {
-        ...notification.metadata,
-        userAvatarUrl:
-          typeof notification.metadata.userAvatarUrl === "string"
-            ? notification.metadata.userAvatarUrl
-            : typeof notification.metadata.userId === "string"
-            ? buyerAvatarById.get(notification.metadata.userId) ?? null
-            : null,
-      },
-      access: accountsByNotificationId.get(notification.id) ?? null,
-    })),
+    notifications: parsedNotifications.map((notification) => {
+      const purchaseNotificationId =
+        typeof notification.metadata.purchaseNotificationId === "string"
+          ? notification.metadata.purchaseNotificationId
+          : notification.id;
+
+      return {
+        ...notification,
+        createdAt: notification.createdAt.toISOString(),
+        metadata: {
+          ...notification.metadata,
+          userAvatarUrl:
+            typeof notification.metadata.userAvatarUrl === "string"
+              ? notification.metadata.userAvatarUrl
+              : typeof notification.metadata.userId === "string"
+              ? buyerAvatarById.get(notification.metadata.userId) ?? null
+              : null,
+        },
+        access: accountsByNotificationId.get(purchaseNotificationId) ?? null,
+      };
+    }),
     unreadCount,
     role: user.role,
   });
