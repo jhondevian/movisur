@@ -8,6 +8,14 @@ function firstHeaderValue(value: string | null) {
   return value?.split(",")[0]?.trim() || "";
 }
 
+function safeOrigin(value: string) {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return "";
+  }
+}
+
 function getPublicOrigin(request: NextRequest) {
   const forwardedHost = firstHeaderValue(request.headers.get("x-forwarded-host"));
   const host = forwardedHost || firstHeaderValue(request.headers.get("host"));
@@ -17,18 +25,23 @@ function getPublicOrigin(request: NextRequest) {
       firstHeaderValue(request.headers.get("x-forwarded-proto")) ||
       (host.startsWith("localhost") ? "http" : "https");
 
-    return `${protocol}://${host}`;
+    const origin = safeOrigin(`${protocol}://${host}`);
+
+    if (origin) return origin;
   }
 
   return siteUrl;
 }
 
 function getDownloadRedirectUrl(request: NextRequest, downloadUrl: string) {
-  if (downloadUrl.startsWith("http://") || downloadUrl.startsWith("https://")) {
-    return downloadUrl;
+  try {
+    return new URL(downloadUrl).toString();
+  } catch {
+    return new URL(
+      downloadUrl.startsWith("/") ? downloadUrl : `/${downloadUrl}`,
+      getPublicOrigin(request)
+    ).toString();
   }
-
-  return new URL(downloadUrl, getPublicOrigin(request)).toString();
 }
 
 export async function GET(

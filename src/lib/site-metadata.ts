@@ -1,6 +1,24 @@
+function normalizeSiteUrl(value: string | undefined) {
+  const raw = value?.trim();
+
+  if (!raw) return "";
+
+  const markdownUrl = raw.match(/\((https?:\/\/[^)]+)\)/i)?.[1];
+  const candidate = (markdownUrl || raw)
+    .replace(/^["']|["']$/g, "")
+    .split(",")[0]
+    .trim();
+
+  try {
+    return new URL(candidate).origin;
+  } catch {
+    return "";
+  }
+}
+
 export const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
+  normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL) ||
+  normalizeSiteUrl(process.env.NEXT_PUBLIC_APP_URL) ||
   "https://www.movisur.net";
 
 export const defaultShareImage = "/images/movisur-logo.png";
