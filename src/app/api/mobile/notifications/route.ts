@@ -18,6 +18,16 @@ function getNotificationWhere(user: { id: string; role: string }) {
   };
 }
 
+function parseMetadata(metadata: string | null) {
+  if (!metadata) return {};
+
+  try {
+    return JSON.parse(metadata || "{}") as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
 export async function GET(request: NextRequest) {
   const user = await verifyMobileAuth(request);
 
@@ -45,7 +55,18 @@ export async function GET(request: NextRequest) {
       where: { ...notificationWhere, isRead: false },
     }),
   ]);
+  const parsedNotifications = notifications.map((notification) => ({
+    ...notification,
+    metadata: parseMetadata(notification.metadata),
+  }));
   const notificationIds = notifications.map((notification) => notification.id);
+  const buyerIds = [
+    ...new Set(
+      parsedNotifications
+        .map((notification) => notification.metadata.userId)
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+    ),
+  ];
   const [licenseAccounts, rentalAccounts] =
     user.role === "usuario" && notificationIds.length > 0
       ? await Promise.all([
@@ -77,6 +98,16 @@ export async function GET(request: NextRequest) {
           }),
         ])
       : [[], []];
+  const buyers =
+    buyerIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: buyerIds } },
+          select: { id: true, avatarUrl: true },
+        })
+      : [];
+  const buyerAvatarById = new Map(
+    buyers.map((buyer) => [buyer.id, buyer.avatarUrl])
+  );
   const accountsByNotificationId = new Map(
     [...licenseAccounts, ...rentalAccounts]
       .filter((account) => account.purchaseNotificationId)
@@ -92,18 +123,18 @@ export async function GET(request: NextRequest) {
   );
 
   return NextResponse.json({
-    notifications: notifications.map((notification) => ({
+    notifications: parsedNotifications.map((notification) => ({
       ...notification,
       createdAt: notification.createdAt.toISOString(),
-      metadata: notification.metadata
-        ? (() => {
-            try {
-              return JSON.parse(notification.metadata || "{}");
-            } catch {
-              return {};
-            }
-          })()
-        : {},
+      metadata: {
+        ...notification.metadata,
+        userAvatarUrl:
+          typeof notification.metadata.userAvatarUrl === "string"
+            ? notification.metadata.userAvatarUrl
+            : typeof notification.metadata.userId === "string"
+            ? buyerAvatarById.get(notification.metadata.userId) ?? null
+            : null,
+      },
       access: accountsByNotificationId.get(notification.id) ?? null,
     })),
     unreadCount,

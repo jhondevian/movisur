@@ -187,6 +187,7 @@ export async function POST(request: NextRequest) {
     userId: authUser.id,
     userEmail: authUser.email,
     userName: `${authUser.firstName} ${authUser.lastName}`.trim(),
+    userAvatarUrl: authUser.avatarUrl,
     currency,
     proofImageUrl,
   };
