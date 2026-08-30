@@ -112,6 +112,7 @@ const roleNavItems: Record<Exclude<SidebarVariant, "admin">, NavItem[]> = {
         { name: "Licencias", path: "/creador/licencias", pro: false },
         { name: "Alquiler", path: "/creador/alquiler", pro: false },
         { name: "Compras", path: "/creador/compras", pro: false },
+        { name: "Aplicacion", path: "/creador/aplicacion", pro: false },
       ],
     },
     {
