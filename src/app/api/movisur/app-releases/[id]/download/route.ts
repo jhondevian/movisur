@@ -4,13 +4,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+function firstHeaderValue(value: string | null) {
+  return value?.split(",")[0]?.trim() || "";
+}
+
 function getPublicOrigin(request: NextRequest) {
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const host = forwardedHost || request.headers.get("host");
+  const forwardedHost = firstHeaderValue(request.headers.get("x-forwarded-host"));
+  const host = forwardedHost || firstHeaderValue(request.headers.get("host"));
 
   if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
     const protocol =
-      request.headers.get("x-forwarded-proto") ||
+      firstHeaderValue(request.headers.get("x-forwarded-proto")) ||
       (host.startsWith("localhost") ? "http" : "https");
 
     return `${protocol}://${host}`;

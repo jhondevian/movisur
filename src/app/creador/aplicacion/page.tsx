@@ -110,10 +110,7 @@ export default async function CreadorAplicacionPage() {
                 )}
               </div>
 
-              <div className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/8 p-5 backdrop-blur">
-                <p className="text-sm font-semibold text-white/70">
-                  Descarga disponible
-                </p>
+              <div className="flex flex-col gap-3">
                 <Link
                   href={`/api/movisur/app-releases/${latestRelease.id}/download?role=creador`}
                   className="inline-flex w-full items-center justify-center rounded-xl bg-brand-500 px-6 py-4 text-sm font-bold text-white shadow-theme-md transition hover:bg-brand-600"

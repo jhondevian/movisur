@@ -97,7 +97,7 @@ export default async function CreadorComprasPage() {
           </p>
         </div>
         <Link
-          href="/creador/compras/configuracion"
+          href="/creador/configuracion/pagos"
           className="rounded-lg bg-brand-500 px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-brand-600"
         >
           Configuracion

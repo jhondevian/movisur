@@ -117,8 +117,11 @@ const roleNavItems: Record<Exclude<SidebarVariant, "admin">, NavItem[]> = {
     },
     {
       icon: <UserCircleIcon />,
-      name: "Perfil",
-      path: "/creador/perfil",
+      name: "Configurar",
+      subItems: [
+        { name: "Perfil", path: "/creador/perfil", pro: false },
+        { name: "Pagos", path: "/creador/configuracion/pagos", pro: false },
+      ],
     },
   ],
   moderador: [
