@@ -201,14 +201,14 @@ export default async function RentalPage({ params }: RentalPageProps) {
   );
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col bg-white dark:bg-gray-950">
       <FrontendHeader />
       <script
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(toolJsonLd) }}
       />
-      <main className="bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
+      <main className="flex-1 bg-white text-gray-900 dark:bg-gray-950 dark:text-white">
         <CreatorCommerceBuyBox
           nextPath={`/alquiler/${tool.id}`}
           offers={tool.offers.map((offer) => ({
@@ -237,6 +237,6 @@ export default async function RentalPage({ params }: RentalPageProps) {
         />
       </main>
       <FrontendFooter />
-    </>
+    </div>
   );
 }

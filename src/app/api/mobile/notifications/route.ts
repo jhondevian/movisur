@@ -10,6 +10,7 @@ function getNotificationWhere(user: { id: string; role: string }) {
       OR: [{ recipientUserId: null }, { recipientUserId: user.id }],
       type: {
         in: [
+          "creator_access_request",
           "binance_payment_confirmation",
           "payment_confirmed",
           "payment_rejected",
@@ -72,11 +73,21 @@ export async function GET(request: NextRequest) {
     metadata: parseMetadata(notification.metadata),
   }));
   const notificationIds = notifications.map((notification) => notification.id);
+  const creatorRequestIds = [
+    ...new Set(
+      parsedNotifications
+        .filter(
+          (notification) => notification.type === "creator_access_request",
+        )
+        .map((notification) => notification.metadata.requestId)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  ];
   const buyerIds = [
     ...new Set(
       parsedNotifications
         .map((notification) => notification.metadata.userId)
-        .filter((id): id is string => typeof id === "string" && id.length > 0)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
     ),
   ];
   const [licenseAccounts, rentalAccounts] =
@@ -118,7 +129,37 @@ export async function GET(request: NextRequest) {
         })
       : [];
   const buyerAvatarById = new Map(
-    buyers.map((buyer) => [buyer.id, buyer.avatarUrl])
+    buyers.map((buyer) => [buyer.id, buyer.avatarUrl]),
+  );
+  const creatorRequests =
+    creatorRequestIds.length > 0
+      ? await prisma.creatorAccessRequest.findMany({
+          where: { id: { in: creatorRequestIds } },
+          select: {
+            id: true,
+            status: true,
+            publicName: true,
+            country: true,
+            specialty: true,
+            whatsapp: true,
+            imageUrl: true,
+            message: true,
+            user: {
+              select: {
+                email: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        })
+      : [];
+  const creatorRequestById = new Map(
+    creatorRequests.map((creatorRequest) => [
+      creatorRequest.id,
+      creatorRequest,
+    ]),
   );
   const accountsByNotificationId = new Map(
     [...licenseAccounts, ...rentalAccounts]
@@ -131,7 +172,7 @@ export async function GET(request: NextRequest) {
           note: account.note,
           expiresAt: account.assignedExpiresAt?.toISOString() ?? null,
         },
-      ])
+      ]),
   );
 
   return NextResponse.json({
@@ -140,18 +181,41 @@ export async function GET(request: NextRequest) {
         typeof notification.metadata.purchaseNotificationId === "string"
           ? notification.metadata.purchaseNotificationId
           : notification.id;
+      const requestId =
+        typeof notification.metadata.requestId === "string"
+          ? notification.metadata.requestId
+          : "";
+      const creatorRequest = creatorRequestById.get(requestId);
+      const creatorRequestUserName = creatorRequest?.user
+        ? `${creatorRequest.user.firstName} ${creatorRequest.user.lastName}`.trim()
+        : "";
 
       return {
         ...notification,
         createdAt: notification.createdAt.toISOString(),
         metadata: {
           ...notification.metadata,
+          requestStatus:
+            creatorRequest?.status ?? notification.metadata.requestStatus,
+          publicName:
+            creatorRequest?.publicName ?? notification.metadata.publicName,
+          country: creatorRequest?.country ?? notification.metadata.country,
+          specialty:
+            creatorRequest?.specialty ?? notification.metadata.specialty,
+          whatsapp: creatorRequest?.whatsapp ?? notification.metadata.whatsapp,
+          imageUrl: creatorRequest?.imageUrl ?? notification.metadata.imageUrl,
+          requestMessage:
+            creatorRequest?.message ?? notification.metadata.requestMessage,
+          userEmail:
+            creatorRequest?.user.email ?? notification.metadata.userEmail,
+          userName: creatorRequestUserName || notification.metadata.userName,
           userAvatarUrl:
-            typeof notification.metadata.userAvatarUrl === "string"
+            creatorRequest?.user.avatarUrl ??
+            (typeof notification.metadata.userAvatarUrl === "string"
               ? notification.metadata.userAvatarUrl
               : typeof notification.metadata.userId === "string"
-              ? buyerAvatarById.get(notification.metadata.userId) ?? null
-              : null,
+                ? (buyerAvatarById.get(notification.metadata.userId) ?? null)
+                : null),
         },
         access: accountsByNotificationId.get(purchaseNotificationId) ?? null,
       };

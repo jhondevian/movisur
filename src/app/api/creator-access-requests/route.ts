@@ -1,4 +1,5 @@
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
+import { sendPushToRoles } from "@/lib/mobile-push";
 import { prisma } from "@/lib/prisma";
 import { mkdir, writeFile } from "fs/promises";
 import { cookies } from "next/headers";
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
   if (!token) {
     return NextResponse.json(
       { message: "Inicia sesion para enviar tu solicitud." },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -37,14 +38,14 @@ export async function POST(request: NextRequest) {
   if (!publicName || !country) {
     return NextResponse.json(
       { message: "Completa nombre publico y pais." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (message.length > 800) {
     return NextResponse.json(
       { message: "La solicitud no debe superar 800 caracteres." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -55,14 +56,14 @@ export async function POST(request: NextRequest) {
     if (!allowedTypes.includes(image.type)) {
       return NextResponse.json(
         { message: "Sube una imagen PNG, JPG o WebP." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (image.size > 2 * 1024 * 1024) {
       return NextResponse.json(
         { message: "La imagen no debe superar 2 MB." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,20 +71,20 @@ export async function POST(request: NextRequest) {
       image.type === "image/png"
         ? "png"
         : image.type === "image/webp"
-        ? "webp"
-        : "jpg";
+          ? "webp"
+          : "jpg";
     const fileName = `${authUser.id}-${Date.now()}.${extension}`;
     const uploadDir = path.join(
       process.cwd(),
       "public",
       "uploads",
-      "creator-requests"
+      "creator-requests",
     );
 
     await mkdir(uploadDir, { recursive: true });
     await writeFile(
       path.join(uploadDir, fileName),
-      Buffer.from(await image.arrayBuffer())
+      Buffer.from(await image.arrayBuffer()),
     );
 
     imageUrl = `/uploads/creator-requests/${fileName}`;
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
   if (user.role === "creador") {
     return NextResponse.json(
       { message: "Tu cuenta ya tiene acceso de creador." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
   if (pending) {
     return NextResponse.json(
       { message: "Ya tienes una solicitud pendiente." },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
   if (recentRequests >= 3) {
     return NextResponse.json(
       { message: "Espera un momento antes de enviar otra solicitud." },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -148,7 +149,7 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  await prisma.adminNotification.create({
+  const notification = await prisma.adminNotification.create({
     data: {
       type: "creator_access_request",
       title: "Nueva solicitud de creador",
@@ -156,12 +157,26 @@ export async function POST(request: NextRequest) {
       metadata: JSON.stringify({
         requestId: creatorRequest.id,
         userId: authUser.id,
+        userEmail: authUser.email,
+        userName: `${authUser.firstName} ${authUser.lastName}`.trim(),
+        userAvatarUrl: authUser.avatarUrl,
         publicName,
         country,
         specialty,
         whatsapp,
+        imageUrl,
+        requestMessage: message,
+        requestStatus: creatorRequest.status,
       }),
     },
+  });
+
+  await sendPushToRoles(["admin"], {
+    title: "Nueva solicitud de creador",
+    body: `${publicName} quiere unirse como creador desde ${country}.`,
+    notificationId: notification.id,
+    route: "vaults",
+    type: "creator_access_request",
   });
 
   return NextResponse.json({ ok: true });

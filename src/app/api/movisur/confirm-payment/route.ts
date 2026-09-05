@@ -1,5 +1,5 @@
 import { authCookieName, verifyAuthToken } from "@/lib/auth";
-import { sendPushToRoles, sendPushToUsers } from "@/lib/mobile-push";
+import { sendPushToUsers } from "@/lib/mobile-push";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { cookies } from "next/headers";
@@ -45,14 +45,16 @@ function parseNotificationMetadata(metadata: string | null): PaymentMetadata {
 
 function isSamePendingConfirmation(
   current: Record<string, unknown>,
-  stored: PaymentMetadata
+  stored: PaymentMetadata,
 ) {
   if (stored.purchaseStatus === "rejected") return false;
   if (stored.userId !== current.userId) return false;
   if (stored.commerceType !== current.commerceType) return false;
 
-  const currentOfferId = typeof current.offerId === "string" ? current.offerId : "";
-  const currentPlanId = typeof current.planId === "string" ? current.planId : "";
+  const currentOfferId =
+    typeof current.offerId === "string" ? current.offerId : "";
+  const currentPlanId =
+    typeof current.planId === "string" ? current.planId : "";
 
   if (currentOfferId) return stored.offerId === currentOfferId;
   if (currentPlanId) return stored.planId === currentPlanId;
@@ -83,13 +85,13 @@ async function savePaymentProof(file: File) {
     "public",
     "uploads",
     "movisur",
-    "payment-proofs"
+    "payment-proofs",
   );
 
   await mkdir(uploadDir, { recursive: true });
   await writeFile(
     path.join(uploadDir, fileName),
-    Buffer.from(await file.arrayBuffer())
+    Buffer.from(await file.arrayBuffer()),
   );
 
   return `/uploads/movisur/payment-proofs/${fileName}`;
@@ -111,9 +113,7 @@ async function parseConfirmPaymentPayload(request: NextRequest) {
         planId: String(formData.get("planId") || ""),
         planName: String(formData.get("planName") || ""),
         commerceType: String(formData.get("commerceType") || "") as
-          | "license"
-          | "rental"
-          | undefined,
+          "license" | "rental" | undefined,
         offerId: String(formData.get("offerId") || ""),
         price: String(formData.get("price") || ""),
         currency: String(formData.get("currency") || ""),
@@ -123,9 +123,9 @@ async function parseConfirmPaymentPayload(request: NextRequest) {
     };
   }
 
-  const payload = (await request.json().catch(() => null)) as
-    | ConfirmPaymentPayload
-    | null;
+  const payload = (await request
+    .json()
+    .catch(() => null)) as ConfirmPaymentPayload | null;
 
   return { payload, proofImageUrl: payload?.proofImageUrl || "" };
 }
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
   if (!token) {
     return NextResponse.json(
       { message: "Inicia sesion para confirmar el pago." },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -148,13 +148,13 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { message: "Inicia sesion para confirmar el pago." },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
   const rateLimit = checkRateLimit(
     getRateLimitKey(request, "movisur-confirm-payment"),
-    confirmPaymentRateLimit
+    confirmPaymentRateLimit,
   );
 
   if (!rateLimit.allowed) {
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
           "X-RateLimit-Limit": String(confirmPaymentRateLimit.limit),
           "X-RateLimit-Remaining": "0",
         },
-      }
+      },
     );
   }
 
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
             ? error.message
             : "Sube una captura o imagen del comprobante.",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -200,14 +200,14 @@ export async function POST(request: NextRequest) {
   ) {
     return NextResponse.json(
       { message: "Confirmacion de pago invalida." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!proofImageUrl) {
     return NextResponse.json(
       { message: "Sube una captura o imagen del comprobante." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -240,14 +240,14 @@ export async function POST(request: NextRequest) {
     if (!offer) {
       return NextResponse.json(
         { message: "La licencia seleccionada no existe." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (offer.creatorId === authUser.id) {
       return NextResponse.json(
         { message: "No puedes comprar tu propia licencia." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -283,14 +283,14 @@ export async function POST(request: NextRequest) {
     if (!offer) {
       return NextResponse.json(
         { message: "El alquiler seleccionado no existe." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (offer.creatorId === authUser.id) {
       return NextResponse.json(
         { message: "No puedes comprar tu propio alquiler." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -325,7 +325,7 @@ export async function POST(request: NextRequest) {
     if (!plan) {
       return NextResponse.json(
         { message: "El plan seleccionado no existe." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -370,8 +370,8 @@ export async function POST(request: NextRequest) {
   const duplicate = duplicateCandidates.find((notification) =>
     isSamePendingConfirmation(
       metadata,
-      parseNotificationMetadata(notification.metadata)
-    )
+      parseNotificationMetadata(notification.metadata),
+    ),
   );
 
   if (duplicate) {
@@ -405,8 +405,6 @@ export async function POST(request: NextRequest) {
 
   if (recipientUserId) {
     await sendPushToUsers([recipientUserId], pushPayload);
-  } else {
-    await sendPushToRoles(["admin", "moderador"], pushPayload);
   }
 
   return NextResponse.json(
@@ -417,6 +415,6 @@ export async function POST(request: NextRequest) {
         "X-RateLimit-Limit": String(confirmPaymentRateLimit.limit),
         "X-RateLimit-Remaining": String(rateLimit.remaining),
       },
-    }
+    },
   );
 }
